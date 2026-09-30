@@ -101,6 +101,16 @@ export function Sidebar() {
       <div className="mt-auto">
         <div className="text-xs text-[var(--arv-text-muted)] px-4 mb-2 font-bold">اطلاعات</div>
         <nav className="space-y-1">{renderNav(infoNav)}</nav>
+
+        {!isAdmin && (
+          <Link
+            href="/admin-login"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all mt-2 text-[var(--arv-text-muted)] hover:bg-[var(--arv-blue)]/40 hover:text-[var(--arv-gold)] border border-dashed border-[var(--arv-blue)]/60"
+          >
+            <Shield size={16} />
+            <span className="text-xs">ورود مدیرکل</span>
+          </Link>
+        )}
       </div>
 
       <div className="mt-4 px-4 py-3 border-t border-[var(--arv-blue)] text-xs text-[var(--arv-text-muted)]">

@@ -13,14 +13,13 @@ export interface UserRoleInfo {
   address: string | null;
 }
 
-/**
- * تشخیص نقش کاربر بر اساس آدرس کیف پول متصل
- * - Admin: آدرس کیف اصلی یا کیف پاداش
- * - User: هر آدرس دیگه‌ای که وصل بشه
- * - Guest: هیچ آدرسی وصل نیست
- */
 export function useUserRole(): UserRoleInfo {
-  const { address, isConnected } = useAccount();
+  const { address } = useAccount();
+
+  // چک کردن sessionStorage برای Admin
+  const isAdminSession =
+    typeof window !== 'undefined' &&
+    sessionStorage.getItem('arv_admin') === 'true';
 
   // چک کردن localStorage برای کیف کاربر
   const userWalletAddress =
@@ -28,7 +27,7 @@ export function useUserRole(): UserRoleInfo {
       ? localStorage.getItem('arv_user_address')
       : null;
 
-  // آدرس فعلی: یا از wagmi، یا از localStorage
+  // آدرس فعلی
   const currentAddress = (address || userWalletAddress || '').toLowerCase();
 
   // آدرس‌های مدیرکل
@@ -37,12 +36,13 @@ export function useUserRole(): UserRoleInfo {
 
   // تشخیص نقش
   let role: UserRole = 'guest';
-  if (currentAddress) {
-    if (currentAddress === mainWallet || currentAddress === rewardWallet) {
-      role = 'admin';
-    } else {
-      role = 'user';
-    }
+
+  if (isAdminSession) {
+    role = 'admin';
+  } else if (currentAddress === mainWallet || currentAddress === rewardWallet) {
+    role = 'admin';
+  } else if (currentAddress) {
+    role = 'user';
   }
 
   return {
