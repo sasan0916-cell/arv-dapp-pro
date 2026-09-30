@@ -9,16 +9,9 @@ export const metadata: Metadata = {
   applicationName: 'ARV DApp',
   keywords: ['ARV', 'Arvand Khabar', 'DApp', 'Web3', 'BNB Chain', 'کیف پول'],
   authors: [{ name: 'ساسان اشکش' }],
-  manifest: '/manifest.json',
   icons: {
     icon: '/icon-192.png',
     apple: '/icon-192.png',
-  },
-  openGraph: {
-    title: 'ARV Super DApp',
-    description: 'کیف پول و DApp غیرمتمرکز توکن ARV',
-    type: 'website',
-    locale: 'fa_IR',
   },
 };
 
@@ -35,9 +28,6 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fa" dir="rtl">
-      <head>
-        <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-      </head>
       <body>
         <ParticleBackground />
         <div className="relative z-10">

@@ -182,3 +182,30 @@ html {
   background: rgba(212, 175, 55, 0.3);
   color: #ffffff;
 }
+
+/* ===== ذرات متحرک پس‌زمینه ===== */
+@keyframes particle-rise {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: var(--opacity);
+  }
+  90% {
+    opacity: var(--opacity);
+  }
+  100% {
+    transform: translateY(-110vh) translateX(30px);
+    opacity: 0;
+  }
+}
+
+.particle-item {
+  position: fixed;
+  bottom: -10px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: particle-rise linear infinite;
+  z-index: 0;
+}

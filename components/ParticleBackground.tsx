@@ -35,56 +35,26 @@ export function ParticleBackground() {
   }, []);
 
   return (
-    <>
-      <style jsx global>{`
-        @keyframes particle-rise {
-          0% {
-            transform: translateY(0) translateX(0);
-            opacity: 0;
-          }
-          10% {
-            opacity: var(--opacity);
-          }
-          90% {
-            opacity: var(--opacity);
-          }
-          100% {
-            transform: translateY(-110vh) translateX(30px);
-            opacity: 0;
-          }
-        }
-
-        .particle-item {
-          position: fixed;
-          bottom: -10px;
-          border-radius: 50%;
-          pointer-events: none;
-          animation: particle-rise linear infinite;
-          z-index: 0;
-        }
-      `}</style>
-
-      <div
-        className="fixed inset-0 pointer-events-none overflow-hidden"
-        style={{ zIndex: 0 }}
-      >
-        {particles.map((p) => (
-          <div
-            key={p.id}
-            className="particle-item"
-            style={{
-              left: `${p.left}%`,
-              width: `${p.size}px`,
-              height: `${p.size}px`,
-              background: `radial-gradient(circle, ${p.color} 0%, transparent 70%)`,
-              animationDuration: `${p.duration}s`,
-              animationDelay: `-${p.delay}s`,
-              boxShadow: `0 0 ${p.size * 3}px ${p.color}`,
-              ['--opacity' as any]: p.opacity,
-            }}
-          />
-        ))}
-      </div>
-    </>
+    <div
+      className="fixed inset-0 pointer-events-none overflow-hidden"
+      style={{ zIndex: 0 }}
+    >
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="particle-item"
+          style={{
+            left: `${p.left}%`,
+            width: `${p.size}px`,
+            height: `${p.size}px`,
+            background: `radial-gradient(circle, ${p.color} 0%, transparent 70%)`,
+            animationDuration: `${p.duration}s`,
+            animationDelay: `-${p.delay}s`,
+            boxShadow: `0 0 ${p.size * 3}px ${p.color}`,
+            ['--opacity' as any]: p.opacity,
+          }}
+        />
+      ))}
+    </div>
   );
 }
