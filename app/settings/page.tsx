@@ -337,6 +337,7 @@ export default function SettingsPage() {
               <GradientButton variant="outline" size="sm" fullWidth icon={<RefreshCw size={14} />}>
                 بررسی بروزرسانی
               </GradientButton>
+              <GradientButton variant="outline" size="sm" fullWidth href="/install-guide.html" icon={<Download size={14} />}>راهنمای نصب</GradientButton>
               <GradientButton variant="outline" size="sm" fullWidth href="/about" icon={<ExternalLink size={14} />}>
                 درباره پروژه
               </GradientButton>
