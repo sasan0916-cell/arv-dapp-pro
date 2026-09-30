@@ -87,13 +87,18 @@ export default function CreateWalletPage() {
   };
 
   const handleVerifyNext = () => {
-    // چک کلمات
-    const allCorrect = verifyWords.every(
-      (wordIdx, i) => verifyInputs[i].trim().toLowerCase() === mnemonic[wordIdx].toLowerCase()
-    );
+    // چک کلمات - با پیام خطای دقیق
+    const errors: string[] = [];
+    verifyWords.forEach((wordIdx, i) => {
+      const input = (verifyInputs[i] || '').trim().toLowerCase();
+      const expected = (mnemonic[wordIdx] || '').toLowerCase();
+      if (input !== expected) {
+        errors.push("کلمه شماره " + (wordIdx + 1) + ": شما " + input + " وارد کردید ولی " + expected + " درست است");
+      }
+    });
 
-    if (!allCorrect) {
-      setError('کلمات وارد شده صحیح نیستند. لطفاً دوباره تلاش کنید.');
+    if (errors.length > 0) {
+      setError(errors.join(' | '));
       return;
     }
 
@@ -125,6 +130,7 @@ export default function CreateWalletPage() {
       };
 
       await saveWallet(walletId, walletData, password);
+      localStorage.setItem('arv_' + walletId + '_address', address);
 
       if (biometricAvailable && useBiometric) {
         setStep('biometric');
