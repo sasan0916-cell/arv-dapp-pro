@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from 'next';
 import { Providers } from '@/components/Providers';
+import { ParticleBackground } from '@/components/ParticleBackground';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'ARV Super DApp | Arvand Khabar Token',
+  title: 'Arvand Khabar Token | ARV Super DApp',
   description: 'کیف پول و DApp غیرمتمرکز توکن ARV روی BNB Smart Chain',
   applicationName: 'ARV DApp',
   keywords: ['ARV', 'Arvand Khabar', 'DApp', 'Web3', 'BNB Chain', 'کیف پول'],
@@ -38,7 +39,10 @@ export default function RootLayout({
         <link rel="preconnect" href="https://cdn.jsdelivr.net" />
       </head>
       <body>
-        <Providers>{children}</Providers>
+        <ParticleBackground />
+        <div className="relative z-10">
+          <Providers>{children}</Providers>
+        </div>
       </body>
     </html>
   );

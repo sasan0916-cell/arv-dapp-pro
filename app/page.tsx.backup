@@ -1,5 +1,4 @@
 'use client';
-import Image from 'next/image';
 
 import { useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
@@ -65,15 +64,12 @@ export default function HomePage() {
                   </a>
                 </div>
               </div>
-              <div className="w-40 h-40 md:w-56 md:h-56 relative rounded-full overflow-hidden shadow-2xl shadow-[var(--arv-gold)]/30 flex-shrink-0">
-  <Image
-    src="/arv-logo.png"
-    alt="Arvand Khabar Token"
-    fill
-    className="object-contain"
-    priority
-  />
-</div>
+              <div className="w-40 h-40 md:w-56 md:h-56 rounded-full bg-gradient-to-br from-[var(--arv-gold)] to-[var(--arv-gold-light)] flex items-center justify-center shadow-2xl shadow-[var(--arv-gold)]/30 flex-shrink-0">
+                <div className="text-center">
+                  <div className="text-5xl md:text-6xl font-bold text-[var(--arv-blue-dark)]">ARV</div>
+                  <div className="text-xs text-[var(--arv-blue-dark)]/70 mt-1">ARVAND KHABAR</div>
+                </div>
+              </div>
             </div>
           </section>
 
