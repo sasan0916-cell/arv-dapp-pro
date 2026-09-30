@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { Sidebar } from '@/components/Sidebar';
-import { Header } from '@/components/Header';
 import { ARV_CONFIG } from '@/lib/arv-config';
 import { shortAddress, formatDate } from '@/lib/utils';
 import { getTxHistory, getBscScanTxUrl } from '@/lib/services/token-service';
@@ -108,7 +107,7 @@ export default function HistoryPage() {
     <div className="flex min-h-screen">
       <Sidebar />
       <main className="flex-1 overflow-x-hidden">
-        <Header />
+        
         <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
 
           {/* Header */}

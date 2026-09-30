@@ -9,7 +9,6 @@ import {
 import { GlowCard } from '@/components/ui/GlowCard';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { Sidebar } from '@/components/Sidebar';
-import { Header } from '@/components/Header';
 import { ARV_CONFIG } from '@/lib/arv-config';
 import { detectInputType } from '@/lib/utils';
 import { restoreFromInput, saveWallet } from '@/lib/services/wallet-service';
@@ -410,7 +409,7 @@ export default function RestorePage() {
     <div className="flex min-h-screen">
       <Sidebar />
       <main className="flex-1 overflow-x-hidden">
-        <Header />
+        
         <Suspense
           fallback={
             <div className="p-6 flex items-center justify-center">

@@ -10,7 +10,6 @@ import {
 import { GlowCard } from '@/components/ui/GlowCard';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { Sidebar } from '@/components/Sidebar';
-import { Header } from '@/components/Header';
 import { ARV_CONFIG } from '@/lib/arv-config';
 import { shortAddress, isValidAddress, copyToClipboard, formatToken } from '@/lib/utils';
 import { sendARV, getARVBalance, getBNBBalance, estimateGas } from '@/lib/services/token-service';
@@ -191,7 +190,7 @@ export default function SendPage() {
       <div className="flex min-h-screen">
         <Sidebar />
         <main className="flex-1 overflow-x-hidden">
-          <Header />
+          
           <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-6">
             <div className="flex items-center gap-3">
               <button
@@ -274,7 +273,7 @@ export default function SendPage() {
       <div className="flex min-h-screen">
         <Sidebar />
         <main className="flex-1 overflow-x-hidden">
-          <Header />
+          
           <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-6">
             <div className="flex items-center gap-3">
               <button
@@ -409,7 +408,7 @@ export default function SendPage() {
       <div className="flex min-h-screen">
         <Sidebar />
         <main className="flex-1 overflow-x-hidden">
-          <Header />
+          
           <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-6">
             <div className="flex items-center gap-3">
               <button
@@ -497,7 +496,7 @@ export default function SendPage() {
       <div className="flex min-h-screen">
         <Sidebar />
         <main className="flex-1 overflow-x-hidden">
-          <Header />
+          
           <div className="p-4 md:p-6 max-w-2xl mx-auto">
             <GlowCard glowColor="gold">
               <div className="text-center py-12">
@@ -519,7 +518,7 @@ export default function SendPage() {
     <div className="flex min-h-screen">
       <Sidebar />
       <main className="flex-1 overflow-x-hidden">
-        <Header />
+        
         <div className="p-4 md:p-6 max-w-2xl mx-auto">
           <GlowCard glowColor="green">
             <div className="text-center py-8">

@@ -9,7 +9,6 @@ import {
 import { GlowCard } from '@/components/ui/GlowCard';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { Sidebar } from '@/components/Sidebar';
-import { Header } from '@/components/Header';
 import { createNewWallet, saveWallet } from '@/lib/services/wallet-service';
 import { enableBiometric, isBiometricAvailable } from '@/lib/services/biometric';
 import { copyToClipboard } from '@/lib/utils';

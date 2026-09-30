@@ -13,7 +13,6 @@ import {
 import { GlowCard } from '@/components/ui/GlowCard';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { Sidebar } from '@/components/Sidebar';
-import { Header } from '@/components/Header';
 import { ARV_CONFIG } from '@/lib/arv-config';
 import { shortAddress, copyToClipboard, formatNumber } from '@/lib/utils';
 
@@ -98,7 +97,7 @@ export default function TokenomicsPage() {
     <div className="flex min-h-screen">
       <Sidebar />
       <main className="flex-1 overflow-x-hidden">
-        <Header />
+        
         <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">
 
           {/* Header */}

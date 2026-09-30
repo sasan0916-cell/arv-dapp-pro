@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Providers } from '@/components/Providers';
 import { ParticleBackground } from '@/components/ParticleBackground';
+import { AppShell } from '@/components/AppShell';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -31,7 +32,9 @@ export default function RootLayout({
       <body>
         <ParticleBackground />
         <div className="relative z-10">
-          <Providers>{children}</Providers>
+          <Providers>
+            <AppShell>{children}</AppShell>
+          </Providers>
         </div>
       </body>
     </html>
