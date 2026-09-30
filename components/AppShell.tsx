@@ -1,30 +1,63 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { MobileSidebar } from './MobileSidebar';
 import { BottomNav } from './BottomNav';
+import { SplashScreen } from './SplashScreen';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showSplash, setShowSplash] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+
+    if (typeof window !== 'undefined') {
+      const splashShown = sessionStorage.getItem('arv_splash_shown');
+      if (!splashShown) {
+        setShowSplash(true);
+      }
+    }
+  }, []);
+
+  const handleSplashFinish = () => {
+    setShowSplash(false);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('arv_splash_shown', 'true');
+    }
+  };
+
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen">
+        <Sidebar />
+        <div className="flex-1 flex flex-col min-w-0 pb-28 lg:pb-0">
+          <Header onMenuClick={() => setSidebarOpen(true)} />
+          {children}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar دسکتاپ */}
-      <Sidebar />
+    <>
+      {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
 
-      {/* محتوا */}
-      <div className="flex-1 flex flex-col min-w-0 pb-28 lg:pb-0">
-        <Header onMenuClick={() => setSidebarOpen(true)} />
-        {children}
+      <div className="flex min-h-screen">
+        <Sidebar />
+
+        <div className="flex-1 flex flex-col min-w-0 pb-28 lg:pb-0">
+          <Header onMenuClick={() => setSidebarOpen(true)} />
+          {children}
+        </div>
+
+        <MobileSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+        <BottomNav />
       </div>
-
-      {/* MobileSidebar موبایل */}
-      <MobileSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-      {/* BottomNav موبایل */}
-      <BottomNav />
-    </div>
+    </>
   );
 }
