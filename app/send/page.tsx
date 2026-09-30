@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { Sidebar } from '@/components/Sidebar';
 import { ARV_CONFIG } from '@/lib/arv-config';
 import { shortAddress, isValidAddress, copyToClipboard, formatToken } from '@/lib/utils';
 import { sendARV, getARVBalance, getBNBBalance, estimateGas } from '@/lib/services/token-service';
@@ -188,7 +187,7 @@ export default function SendPage() {
   if (step === 'select-wallet') {
     return (
       <div className="flex min-h-screen">
-        <Sidebar />
+        
         <main className="flex-1 overflow-x-hidden">
           
           <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-6">
@@ -271,7 +270,7 @@ export default function SendPage() {
     const wallet = walletOptions.find((w) => w.id === selectedWallet);
     return (
       <div className="flex min-h-screen">
-        <Sidebar />
+        
         <main className="flex-1 overflow-x-hidden">
           
           <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-6">
@@ -406,7 +405,7 @@ export default function SendPage() {
     const wallet = walletOptions.find((w) => w.id === selectedWallet);
     return (
       <div className="flex min-h-screen">
-        <Sidebar />
+        
         <main className="flex-1 overflow-x-hidden">
           
           <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-6">
@@ -494,7 +493,7 @@ export default function SendPage() {
   if (step === 'sending') {
     return (
       <div className="flex min-h-screen">
-        <Sidebar />
+        
         <main className="flex-1 overflow-x-hidden">
           
           <div className="p-4 md:p-6 max-w-2xl mx-auto">
@@ -516,7 +515,7 @@ export default function SendPage() {
   // ===== Step 5: Done =====
   return (
     <div className="flex min-h-screen">
-      <Sidebar />
+      
       <main className="flex-1 overflow-x-hidden">
         
         <div className="p-4 md:p-6 max-w-2xl mx-auto">

@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { Sidebar } from '@/components/Sidebar';
 import { ARV_CONFIG } from '@/lib/arv-config';
 import { shortAddress } from '@/lib/utils';
 
@@ -124,7 +123,7 @@ export default function SwapPage() {
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar />
+      
       <main className="flex-1 overflow-x-hidden">
         
         <div className="p-4 md:p-6 max-w-lg mx-auto space-y-4">

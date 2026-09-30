@@ -5,7 +5,6 @@ import {
   Coins, Lock, FileCheck, Zap, ArrowRight,
 } from 'lucide-react';
 import { GlowCard } from '@/components/ui/GlowCard';
-import { Sidebar } from '@/components/Sidebar';
 import { ARV_CONFIG } from '@/lib/arv-config';
 import { formatNumber, shortAddress } from '@/lib/utils';
 
@@ -27,7 +26,7 @@ export default function MainnetPage() {
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar />
+      
       <main className="flex-1 overflow-x-hidden">
         
         <div className="p-4 md:p-6 space-y-6">

@@ -7,7 +7,6 @@ import {
   Award, Briefcase, TrendingUp, Heart,
 } from 'lucide-react';
 import { GlowCard } from '@/components/ui/GlowCard';
-import { Sidebar } from '@/components/Sidebar';
 import { ARV_CONFIG } from '@/lib/arv-config';
 
 export default function AboutPage() {
@@ -147,7 +146,7 @@ export default function AboutPage() {
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar />
+      
       <main className="flex-1 overflow-x-hidden">
         
         <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">

@@ -10,7 +10,6 @@ import {
 } from 'recharts';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
-import { Sidebar } from '@/components/Sidebar';
 import { ARV_CONFIG } from '@/lib/arv-config';
 import { shortAddress } from '@/lib/utils';
 
@@ -60,7 +59,7 @@ export default function MarketPage() {
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar />
+      
       <main className="flex-1 overflow-x-hidden">
         
         <div className="p-4 md:p-6 space-y-6">

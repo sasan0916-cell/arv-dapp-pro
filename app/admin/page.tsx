@@ -8,7 +8,6 @@ import {
 import { GlowCard } from '@/components/ui/GlowCard';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
-import { Sidebar } from '@/components/Sidebar';
 import { ARV_CONFIG } from '@/lib/arv-config';
 import { shortAddress, copyToClipboard, formatNumber } from '@/lib/utils';
 
@@ -62,7 +61,7 @@ export default function AdminPage() {
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar />
+      
       <main className="flex-1 overflow-x-hidden">
         
         <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-6">

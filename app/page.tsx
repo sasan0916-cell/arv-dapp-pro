@@ -11,7 +11,6 @@ import {
 import { ARV_CONFIG } from '@/lib/arv-config';
 import { getARVBalance, getTokenInfo } from '@/lib/services/token-service';
 import { formatNumber, shortAddress } from '@/lib/utils';
-import { Sidebar } from '@/components/Sidebar';
 
 export default function HomePage() {
   const { address, isConnected } = useAccount();
@@ -37,7 +36,7 @@ export default function HomePage() {
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar />
+      
       <main className="flex-1 overflow-x-hidden">
         
         <div className="p-4 md:p-6 space-y-6">

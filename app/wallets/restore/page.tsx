@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { Sidebar } from '@/components/Sidebar';
 import { ARV_CONFIG } from '@/lib/arv-config';
 import { detectInputType } from '@/lib/utils';
 import { restoreFromInput, saveWallet } from '@/lib/services/wallet-service';
@@ -407,7 +406,7 @@ function RestoreContent() {
 export default function RestorePage() {
   return (
     <div className="flex min-h-screen">
-      <Sidebar />
+      
       <main className="flex-1 overflow-x-hidden">
         
         <Suspense
