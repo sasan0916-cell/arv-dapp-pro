@@ -82,7 +82,7 @@ export default function AboutPage() {
     {
       label: 'وب‌سایت رسمی',
       value: 'arvandkhabar.ir',
-      href: ARV_CONFIG.website,
+      href: ARV_CONFIG.social.website,
       icon: <Globe size={18} />,
       color: 'gold' as const,
     },
