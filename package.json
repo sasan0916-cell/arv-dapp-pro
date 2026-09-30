@@ -13,6 +13,7 @@
     "@rainbow-me/rainbowkit": "^2.2.11",
     "@scure/bip39": "^2.4.0",
     "@tanstack/react-query": "^5.104.0",
+    "clsx": "^2.1.1",
     "ethers": "^6.17.0",
     "framer-motion": "^13.4.6",
     "lucide-react": "^1.49.0",
@@ -22,8 +23,9 @@
     "react-dom": "19.2.8",
     "react-icons": "^5.7.0",
     "recharts": "^3.10.1",
-    "viem": "^2.57.1",
-    "wagmi": "^3.7.7"
+    "tailwind-merge": "^3.7.0",
+    "viem": "^2.37.0",
+    "wagmi": "^2.19.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
