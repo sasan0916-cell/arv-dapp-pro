@@ -1,8 +1,3 @@
-/**
- * رمزنگاری کیف پول با AES-256-GCM
- * فقط برای ذخیره‌سازی محلی در مرورگر
- */
-
 const ALGO = 'AES-GCM';
 const KEY_LEN = 256;
 const ITERATIONS = 100000;
@@ -31,13 +26,15 @@ async function deriveKey(
     ['deriveKey']
   );
 
+  const params: Pbkdf2Params = {
+    name: 'PBKDF2',
+    salt: salt.buffer as ArrayBuffer,
+    iterations: ITERATIONS,
+    hash: 'SHA-256',
+  };
+
   return crypto.subtle.deriveKey(
-    {
-      name: 'PBKDF2',
-      salt,
-      iterations: ITERATIONS,
-      hash: 'SHA-256',
-    },
+    params,
     passwordKey,
     { name: ALGO, length: KEY_LEN },
     false,
@@ -54,8 +51,14 @@ export async function encrypt(
   const iv = crypto.getRandomValues(new Uint8Array(12));
 
   const key = await deriveKey(password, salt);
+
+  const encParams: AesGcmParams = {
+    name: ALGO,
+    iv: iv.buffer as ArrayBuffer,
+  };
+
   const ciphertext = await crypto.subtle.encrypt(
-    { name: ALGO, iv },
+    encParams,
     key,
     encoder.encode(plaintext)
   );
@@ -82,9 +85,14 @@ export async function decrypt(
 
   const key = await deriveKey(password, salt);
 
+  const decParams: AesGcmParams = {
+    name: ALGO,
+    iv: iv.buffer as ArrayBuffer,
+  };
+
   try {
     const plaintext = await crypto.subtle.decrypt(
-      { name: ALGO, iv },
+      decParams,
       key,
       ciphertext
     );
