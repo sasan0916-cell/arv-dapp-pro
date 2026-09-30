@@ -3,13 +3,15 @@
 import { useState, useEffect } from 'react';
 import {
   ArrowDownUp, Shield, Gift, User, Loader2, AlertCircle,
-  Check, Info, Settings, RefreshCw, ChevronDown,
+  Check, Info, Settings, RefreshCw, ArrowLeft,
 } from 'lucide-react';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { ARV_CONFIG } from '@/lib/arv-config';
+import { shortAddress } from '@/lib/utils';
 
 type WalletId = 'main' | 'reward' | 'user';
+type SwapDirection = 'arv-to-bnb' | 'bnb-to-arv';
 
 interface WalletOption {
   id: WalletId;
@@ -19,45 +21,17 @@ interface WalletOption {
   icon: React.ReactNode;
 }
 
-interface Token {
-  symbol: string;
-  name: string;
-  icon: string;
-  balance: string;
-}
-
-const TOKENS: Token[] = [
-  { symbol: 'ARV', name: 'Arvand Khabar Token', icon: '🟡', balance: '6,000,000' },
-  { symbol: 'BNB', name: 'Binance Coin', icon: '🟠', balance: '0.19994' },
-  { symbol: 'USDT', name: 'Tether', icon: '💵', balance: '1,000' },
-  { symbol: 'BUSD', name: 'Binance USD', icon: '💚', balance: '500' },
-  { symbol: 'BTCB', name: 'Bitcoin BEP-20', icon: '₿', balance: '0.01' },
-  { symbol: 'ETH', name: 'Ethereum BEP-20', icon: 'Ξ', balance: '0.05' },
-  { symbol: 'TON', name: 'Toncoin', icon: '💎', balance: '10' },
-];
-
-// نرخ‌های شبیه‌سازی‌شده (نسبت به ARV)
-const RATES: Record<string, number> = {
-  ARV: 1,
-  BNB: 0.0000023,
-  USDT: 0.0234,
-  BUSD: 0.0234,
-  BTCB: 0.0000004,
-  ETH: 0.000007,
-  TON: 0.0034,
-};
+// نرخ شبیه‌سازی‌شده
+const MOCK_RATE = 0.0000023;
 
 export default function SwapPage() {
   const [walletOptions, setWalletOptions] = useState<WalletOption[]>([]);
   const [selectedWallet, setSelectedWallet] = useState<WalletId>('main');
-  const [fromToken, setFromToken] = useState('ARV');
-  const [toToken, setToToken] = useState('BNB');
+  const [direction, setDirection] = useState<SwapDirection>('arv-to-bnb');
   const [fromAmount, setFromAmount] = useState('');
   const [toAmount, setToAmount] = useState('');
   const [slippage, setSlippage] = useState(0.5);
   const [showSettings, setShowSettings] = useState(false);
-  const [showFromDropdown, setShowFromDropdown] = useState(false);
-  const [showToDropdown, setShowToDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -93,16 +67,20 @@ export default function SwapPage() {
   }, []);
 
   const selected = walletOptions.find((w) => w.id === selectedWallet);
-  const fromTokenData = TOKENS.find((t) => t.symbol === fromToken)!;
-  const toTokenData = TOKENS.find((t) => t.symbol === toToken)!;
+
+  const fromCurrency = direction === 'arv-to-bnb' ? 'ARV' : 'BNB';
+  const toCurrency = direction === 'arv-to-bnb' ? 'BNB' : 'ARV';
 
   const handleFromAmountChange = (value: string) => {
     setFromAmount(value);
-    if (value && fromToken && toToken) {
+    if (value) {
       const num = parseFloat(value);
       if (!isNaN(num)) {
-        const result = (num * RATES[fromToken]) / RATES[toToken];
-        setToAmount(result.toFixed(6));
+        const result =
+          direction === 'arv-to-bnb'
+            ? num * MOCK_RATE
+            : num / MOCK_RATE;
+        setToAmount(result.toFixed(direction === 'arv-to-bnb' ? 8 : 4));
       }
     } else {
       setToAmount('');
@@ -110,14 +88,17 @@ export default function SwapPage() {
   };
 
   const handleSwitch = () => {
-    setFromToken(toToken);
-    setToToken(fromToken);
-    setFromAmount(toAmount);
-    setToAmount(fromAmount);
+    setDirection(direction === 'arv-to-bnb' ? 'bnb-to-arv' : 'arv-to-bnb');
+    setFromAmount('');
+    setToAmount('');
   };
 
   const handleMax = () => {
-    setFromAmount(fromTokenData.balance.replace(/,/g, ''));
+    if (direction === 'arv-to-bnb') {
+      setFromAmount('1000');
+    } else {
+      setFromAmount('0.1');
+    }
   };
 
   const handleSwap = async () => {
@@ -130,6 +111,7 @@ export default function SwapPage() {
     setError('');
     setSuccess(false);
 
+    // شبیه‌سازی سواپ
     setTimeout(() => {
       setLoading(false);
       setSuccess(true);
@@ -139,39 +121,21 @@ export default function SwapPage() {
     }, 2000);
   };
 
-  const selectFromToken = (symbol: string) => {
-    if (symbol === toToken) {
-      setToToken(fromToken);
-    }
-    setFromToken(symbol);
-    setShowFromDropdown(false);
-    setFromAmount('');
-    setToAmount('');
-  };
-
-  const selectToToken = (symbol: string) => {
-    if (symbol === fromToken) {
-      setFromToken(toToken);
-    }
-    setToToken(symbol);
-    setShowToDropdown(false);
-    setFromAmount('');
-    setToAmount('');
-  };
-
   return (
     <div className="flex min-h-screen">
+      
       <main className="flex-1 overflow-x-hidden">
+        
         <div className="p-4 md:p-6 max-w-lg mx-auto space-y-4">
 
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold mb-1">
-                <span className="gold-gradient">سواپ ارزهای دیجیتال</span>
+                <span className="gold-gradient">سواپ ARV ↔ BNB</span>
               </h1>
               <p className="text-xs text-[var(--arv-text-muted)]">
-                تبادل ARV با BNB، USDT، BUSD، BTCB، ETH
+                تبدیل توکن ARV به BNB و بالعکس
               </p>
             </div>
             <button
@@ -185,7 +149,7 @@ export default function SwapPage() {
           {/* Settings */}
           {showSettings && (
             <GlowCard glowColor="gold">
-              <div className="mb-3">
+              <div className="flex items-center justify-between mb-3">
                 <div className="text-sm font-bold">تنظیمات Slippage</div>
               </div>
               <div className="flex gap-2">
@@ -248,7 +212,7 @@ export default function SwapPage() {
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-[var(--arv-text-muted)]">از</span>
                 <span className="text-xs text-[var(--arv-text-muted)]">
-                  موجودی: {fromTokenData.balance}
+                  موجودی: ---
                 </span>
               </div>
               <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--arv-blue)]/30 border border-[var(--arv-gold)]/20">
@@ -257,7 +221,7 @@ export default function SwapPage() {
                   value={fromAmount}
                   onChange={(e) => handleFromAmountChange(e.target.value)}
                   placeholder="0.0"
-                  className="flex-1 bg-transparent outline-none text-lg font-bold text-white"
+                  className="flex-1 bg-transparent outline-none text-lg font-bold"
                   dir="ltr"
                 />
                 <button
@@ -266,46 +230,10 @@ export default function SwapPage() {
                 >
                   MAX
                 </button>
-                <button
-                  onClick={() => setShowFromDropdown(!showFromDropdown)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--arv-blue)] font-bold text-sm hover:bg-[var(--arv-blue)]/80 transition-all"
-                >
-                  <span>{fromTokenData.icon}</span>
-                  <span>{fromToken}</span>
-                  <ChevronDown size={14} />
-                </button>
-              </div>
-
-              {/* From Dropdown */}
-              {showFromDropdown && (
-                <div className="mt-2 p-2 rounded-xl bg-[var(--arv-blue-dark)] border border-[var(--arv-gold)]/30 max-h-60 overflow-y-auto">
-                  {TOKENS.map((token) => (
-                    <button
-                      key={token.symbol}
-                      onClick={() => selectFromToken(token.symbol)}
-                      disabled={token.symbol === toToken}
-                      className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${
-                        token.symbol === fromToken
-                          ? 'bg-[var(--arv-gold)]/20 text-[var(--arv-gold)]'
-                          : token.symbol === toToken
-                          ? 'opacity-30 cursor-not-allowed'
-                          : 'hover:bg-[var(--arv-blue)]/40'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">{token.icon}</span>
-                        <div className="text-right">
-                          <div className="font-bold text-sm">{token.symbol}</div>
-                          <div className="text-xs text-[var(--arv-text-muted)]">{token.name}</div>
-                        </div>
-                      </div>
-                      <div className="text-xs text-[var(--arv-text-muted)]" dir="ltr">
-                        {token.balance}
-                      </div>
-                    </button>
-                  ))}
+                <div className="px-3 py-1 rounded-lg bg-[var(--arv-blue)] text-sm font-bold">
+                  {fromCurrency}
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Switch Button */}
@@ -323,7 +251,7 @@ export default function SwapPage() {
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-[var(--arv-text-muted)]">به</span>
                 <span className="text-xs text-[var(--arv-text-muted)]">
-                  موجودی: {toTokenData.balance}
+                  موجودی: ---
                 </span>
               </div>
               <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--arv-blue)]/30 border border-[var(--arv-gold)]/20">
@@ -332,49 +260,13 @@ export default function SwapPage() {
                   value={toAmount}
                   readOnly
                   placeholder="0.0"
-                  className="flex-1 bg-transparent outline-none text-lg font-bold text-white"
+                  className="flex-1 bg-transparent outline-none text-lg font-bold"
                   dir="ltr"
                 />
-                <button
-                  onClick={() => setShowToDropdown(!showToDropdown)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--arv-blue)] font-bold text-sm hover:bg-[var(--arv-blue)]/80 transition-all"
-                >
-                  <span>{toTokenData.icon}</span>
-                  <span>{toToken}</span>
-                  <ChevronDown size={14} />
-                </button>
-              </div>
-
-              {/* To Dropdown */}
-              {showToDropdown && (
-                <div className="mt-2 p-2 rounded-xl bg-[var(--arv-blue-dark)] border border-[var(--arv-gold)]/30 max-h-60 overflow-y-auto">
-                  {TOKENS.map((token) => (
-                    <button
-                      key={token.symbol}
-                      onClick={() => selectToToken(token.symbol)}
-                      disabled={token.symbol === fromToken}
-                      className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${
-                        token.symbol === toToken
-                          ? 'bg-[var(--arv-gold)]/20 text-[var(--arv-gold)]'
-                          : token.symbol === fromToken
-                          ? 'opacity-30 cursor-not-allowed'
-                          : 'hover:bg-[var(--arv-blue)]/40'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">{token.icon}</span>
-                        <div className="text-right">
-                          <div className="font-bold text-sm">{token.symbol}</div>
-                          <div className="text-xs text-[var(--arv-text-muted)]">{token.name}</div>
-                        </div>
-                      </div>
-                      <div className="text-xs text-[var(--arv-text-muted)]" dir="ltr">
-                        {token.balance}
-                      </div>
-                    </button>
-                  ))}
+                <div className="px-3 py-1 rounded-lg bg-[var(--arv-blue)] text-sm font-bold">
+                  {toCurrency}
                 </div>
-              )}
+              </div>
             </div>
           </GlowCard>
 
@@ -384,7 +276,7 @@ export default function SwapPage() {
               <div className="flex justify-between">
                 <span className="text-[var(--arv-text-muted)]">نرخ</span>
                 <span dir="ltr">
-                  1 {fromToken} = {((RATES[fromToken] / RATES[toToken]) * 1).toFixed(6)} {toToken}
+                  1 ARV = {MOCK_RATE} BNB
                 </span>
               </div>
               <div className="flex justify-between">
