@@ -23,7 +23,7 @@
   --arv-bg: #0a1929;
   --arv-card: #1e3a5f;
   --arv-text: #ffffff;
-  --arv-text-muted: #cbd5e1;
+  --arv-text-muted: #a0aec0;
   --arv-success: #48bb78;
   --arv-warning: #ed8936;
   --arv-danger: #f56565;
