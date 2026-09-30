@@ -10,6 +10,9 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { ARV_CONFIG } from '@/lib/arv-config';
 import { shortAddress, copyToClipboard, formatNumber } from '@/lib/utils';
+import { useAdminStats } from '@/lib/hooks/useAdminStats';
+import { useUserRole } from '@/lib/hooks/useUserRole';
+import { useRouter } from 'next/navigation';
 
 interface UserRow {
   address: string;
@@ -18,20 +21,29 @@ interface UserRow {
 }
 
 export default function AdminPage() {
+  const router = useRouter();
+  const { isAdmin } = useUserRole();
+  const [authChecked, setAuthChecked] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [rewardAddress, setRewardAddress] = useState('');
   const [rewardAmount, setRewardAmount] = useState('');
   const [showRewardForm, setShowRewardForm] = useState(false);
 
-  // داده‌های نمایشی
-  const stats = {
-    totalSupply: 10000000,
-    mainBalance: 5999989,
-    rewardBalance: 4000000,
-    totalUsers: 1245,
-    totalTx: 12,
-  };
+  // داده‌های واقعی از بلاکچین
+  const stats = useAdminStats();
+
+  // ===== محافظت: فقط ادمین =====
+  useEffect(() => {
+    const adminSession = typeof window !== "undefined" && sessionStorage.getItem("arv_admin") === "true";
+    if (adminSession === false && isAdmin === false) {
+      router.replace("/admin-login");
+    } else {
+      setAuthChecked(true);
+    }
+  }, [isAdmin, router]);
+
+  // داده‌های واقعی از بلاکچین
 
   const users: UserRow[] = [
     { address: '0xf559de50AdceE062188cc5e267626aE767516121', balance: '1,245', joined: '۲ روز پیش' },
@@ -58,6 +70,19 @@ export default function AdminPage() {
       alert('پاداش با موفقیت ارسال شد!');
     }, 1500);
   };
+
+
+  // اگه هنوز auth چک نشده، صفحه بارگذاری نشون بده
+  if (authChecked === false) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full border-4 border-[var(--arv-gold)] border-t-transparent animate-spin"></div>
+          <p className="text-sm text-[var(--arv-text-muted)]">در حال بررسی دسترسی...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -295,7 +320,7 @@ export default function AdminPage() {
               <div className="text-center">
                 <Gift size={24} className="text-[var(--arv-success)] mx-auto mb-2" />
                 <div className="text-2xl font-bold text-[var(--arv-success)]">
-                  <AnimatedNumber value={4000000} decimals={0} />
+                  <AnimatedNumber value={stats.rewardBalance} decimals={0} />
                 </div>
                 <div className="text-xs text-[var(--arv-text-muted)] mt-1">پاداش موجود</div>
               </div>

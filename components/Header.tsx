@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Menu, Search } from 'lucide-react';
 import { ConnectButton } from './ConnectButton';
+import { AdminButton } from './admin/AdminButton';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -72,6 +73,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           <div className="text-sm font-bold">ARV</div>
         </Link>
 
+        <AdminButton />
         <ConnectButton />
       </div>
     </header>

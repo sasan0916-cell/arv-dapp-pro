@@ -10,6 +10,7 @@ import {
 import { GlowCard } from '@/components/ui/GlowCard';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { ARV_CONFIG } from '@/lib/arv-config';
+import { useUserRole } from '@/lib/hooks/useUserRole';
 import { shortAddress, copyToClipboard } from '@/lib/utils';
 
 interface WalletCard {
@@ -26,6 +27,7 @@ interface WalletCard {
 }
 
 export default function WalletsPage() {
+  const { isAdmin } = useUserRole();
   const [wallets, setWallets] = useState<WalletCard[]>([
     {
       id: 'main',
@@ -90,6 +92,8 @@ export default function WalletsPage() {
     setHideAddress((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const visibleWallets = isAdmin ? wallets : wallets.filter(function(w) { return w.isAdmin == false; });
+
   return (
     <div className="flex min-h-screen">
       
@@ -109,7 +113,7 @@ export default function WalletsPage() {
 
           {/* Wallet Cards */}
           <div className="space-y-4">
-            {wallets.map((wallet, i) => (
+            {visibleWallets.map((wallet, i) => (
               <GlowCard key={wallet.id} glowColor={wallet.color} delay={i * 0.1}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
