@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { X, LayoutDashboard, BarChart3, Globe, Send, Download, ArrowLeftRight, History, Wallet, Shield, Coins, Gift, Users, Info, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUserRole } from '@/lib/hooks/useUserRole';
 
 interface MobileSidebarProps {
   isOpen: boolean;
@@ -18,7 +19,7 @@ const mainNav = [
   { href: '/mainnet', label: 'وضعیت Mainnet', icon: Globe },
   { href: '/send', label: 'ارسال ARV', icon: Send },
   { href: '/receive', label: 'دریافت', icon: Download },
-  { href: '/swap', label: 'سواپ ARV ↔ BNB', icon: ArrowLeftRight },
+  { href: '/swap', label: 'سواپ ارزها', icon: ArrowLeftRight },
   { href: '/history', label: 'تاریخچه', icon: History },
   { href: '/wallets', label: 'کیف پول‌ها', icon: Wallet },
 ];
@@ -38,13 +39,12 @@ const infoNav = [
 
 export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const pathname = usePathname();
+  const { isAdmin } = useUserRole();
 
-  // بستن drawer با تغییر صفحه
   useEffect(() => {
     onClose();
   }, [pathname]);
 
-  // بستن با Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -76,7 +76,6 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
   return (
     <>
-      {/* Overlay */}
       <div
         className={cn(
           'fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] lg:hidden transition-opacity duration-300',
@@ -85,7 +84,6 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         onClick={onClose}
       />
 
-      {/* Drawer */}
       <aside
         className={cn(
           'fixed top-0 right-0 h-full w-72 bg-[var(--arv-blue-dark)] z-[101] lg:hidden transition-transform duration-300 overflow-y-auto',
@@ -93,7 +91,6 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           isOpen ? 'translate-x-0' : 'translate-x-full'
         )}
       >
-        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[var(--arv-blue)]">
           <Link href="/" className="flex items-center gap-3" onClick={onClose}>
             <div className="w-10 h-10 relative rounded-full overflow-hidden">
@@ -113,17 +110,21 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           </button>
         </div>
 
-        {/* Nav */}
         <div className="p-4 space-y-6">
           <div>
             <div className="text-xs text-[var(--arv-text-muted)] px-4 mb-2 font-bold">عملیات اصلی</div>
             <nav className="space-y-1">{renderNav(mainNav)}</nav>
           </div>
 
-          <div>
-            <div className="text-xs text-[var(--arv-text-muted)] px-4 mb-2 font-bold">مدیریت</div>
-            <nav className="space-y-1">{renderNav(adminNav)}</nav>
-          </div>
+          {isAdmin && (
+            <div>
+              <div className="text-xs text-[var(--arv-gold)] px-4 mb-2 font-bold flex items-center gap-1">
+                <Shield size={12} />
+                مدیریت
+              </div>
+              <nav className="space-y-1">{renderNav(adminNav)}</nav>
+            </div>
+          )}
 
           <div>
             <div className="text-xs text-[var(--arv-text-muted)] px-4 mb-2 font-bold">اطلاعات</div>
@@ -131,7 +132,6 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="p-4 border-t border-[var(--arv-blue)] text-xs text-[var(--arv-text-muted)]">
           <div>نسخه ۱.۰.۰</div>
           <div className="mt-1">BNB Chain Testnet</div>

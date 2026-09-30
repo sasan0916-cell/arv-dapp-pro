@@ -1,8 +1,4 @@
 export const ARV_CONFIG = {
-  admin: {
-    password: 'ARV#sasan@2026!Admin',
-    biometricRequired: true,
-  },
   token: {
     name: 'Arvand Khabar Token',
     nameShort: 'Arvand Khabar',
@@ -74,6 +70,11 @@ export const ARV_CONFIG = {
     docs: 'https://docs.arvtoken.com',
     news: 'https://arvandkhabar.ir',
     api: 'https://api.arvtoken.com',
+  },
+  deepLinks: {
+    protocol: 'arv',
+    scheme: 'arv://',
+    universalLink: 'https://arvtoken.com/open',
   },
   social: {
     twitter: 'https://twitter.com/arvtoken',
