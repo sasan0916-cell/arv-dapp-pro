@@ -6,7 +6,8 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "sed -i 's/com.android.tools.build:gradle:8.7.2/com.android.tools.build:gradle:8.6.1/g' node_modules/@capacitor/android/capacitor/build.gradle"
   },
   "dependencies": {
     "@noble/hashes": "^2.4.0",
