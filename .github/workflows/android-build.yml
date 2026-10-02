@@ -8,6 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: arv-complete/arv-dapp-pro-clean
 
     steps:
     - name: Checkout Source Code
@@ -46,4 +49,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: app-debug
-        path: android/app/build/outputs/apk/debug/app-debug.apk
+        path: arv-complete/arv-dapp-pro-clean/android/app/build/outputs/apk/debug/app-debug.apk
