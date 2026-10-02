@@ -23,6 +23,8 @@ jobs:
 
     - name: Build Next.js Project
       run: npm run build
+      env:
+        isMobileBuild: 'true'
 
     - name: Setup Java JDK
       uses: actions/setup-java@v4
