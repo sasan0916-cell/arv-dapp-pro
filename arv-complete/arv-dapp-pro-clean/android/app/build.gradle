@@ -1,48 +1,59 @@
-name: Build Android APK
+apply plugin: 'com.android.application'
 
-on:
-  push:
-    branches: [ "main" ]
-  workflow_dispatch:
+android {
+    namespace "ir.arvandkhabar.arvsuperdapp"
+    compileSdk rootProject.ext.compileSdkVersion
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    container:
-      image: mingc/android-build-box:latest
+    defaultConfig {
+        applicationId "ir.arvandkhabar.arvsuperdapp"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
 
-    steps:
-    - name: Checkout Source Code
-      uses: actions/checkout@v4
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
 
-    - name: Install Dependencies
-      run: npm install
-      working-directory: arv-complete/arv-dapp-pro-clean
+repositories {
+    flatDir {
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
 
-    - name: Build Next.js Project
-      run: npm run build
-      working-directory: arv-complete/arv-dapp-pro-clean
-      env:
-        isMobileBuild: 'true'
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
 
-    - name: Sync Capacitor
-      run: npx cap sync android
-      working-directory: arv-complete/arv-dapp-pro-clean
+apply from: 'capacitor.build.gradle'
 
-    - name: Build Android APK
-      run: |
-        cd android
-        chmod +x gradlew
-        ./gradlew assembleDebug
-      working-directory: arv-complete/arv-dapp-pro-clean
-
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-debug
-        path: arv-complete/arv-dapp-pro-clean/android/app/build/outputs/apk/debug/app-debug.apk
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
