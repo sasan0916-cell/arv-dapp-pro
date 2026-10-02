@@ -26,6 +26,8 @@ jobs:
 
     - name: Build Next.js Project
       run: npm run build
+      env:
+        isMobileBuild: 'true'
 
     - name: Setup Java JDK
       uses: actions/setup-java@v4
@@ -52,6 +54,7 @@ jobs:
 
     - name: Build Android APK
       run: |
+        cp build.gradle.fixed android/build.gradle
         cd android
         chmod +x gradlew
         ./gradlew assembleDebug
