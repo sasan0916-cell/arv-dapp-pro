@@ -1,2 +1,2 @@
-:HL["/_next/static/css/7d0ab81ce1bb0a6b.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"market","param":null,"prefetchHints":4192,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"xg3WMSoauOXoJxSueHOrK"}
+:HL["/arv-dapp-pro/_next/static/css/7d0ab81ce1bb0a6b.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"market","param":null,"prefetchHints":4192,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"H4AkrlX6vrZZxkJFSLixD"}
