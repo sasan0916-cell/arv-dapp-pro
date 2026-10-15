@@ -1,0 +1,182 @@
+/**
+ * سرویس Analytics - آمار DEX
+ * آمار از روی زنجیره خونده می‌شه
+ */
+
+import { ethers } from 'ethers';
+import { ARV_CONFIG } from '../arv-config';
+import { getDexProvider, PANCAKE_V2, PANCAKE_V2_FACTORY } from './dex-service';
+
+export interface TopPool {
+  pairAddress: string;
+  token0: string;
+  token1: string;
+  symbol0: string;
+  symbol1: string;
+  reserve0: string;
+  reserve1: string;
+  tvlUSD: number;
+}
+
+export interface AnalyticsData {
+  chainId: number;
+  tvlUSD: number;
+  poolCount: number;
+  arvPrice: number;
+  bnbPrice: number | null;
+  arvReserve: string;
+  bnbReserve: string;
+  pairAddress: string;
+  topPools: TopPool[];
+  lastUpdate: number;
+}
+
+const FACTORY_ABI = [
+  'function allPairsLength() view returns (uint256)',
+  'function allPairs(uint256) view returns (address)',
+];
+
+const PAIR_ABI = [
+  'function getReserves() view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)',
+  'function token0() view returns (address)',
+  'function token1() view returns (address)',
+];
+
+const ERC20_ABI = [
+  'function symbol() view returns (string)',
+  'function decimals() view returns (uint8)',
+];
+
+/**
+ * قیمت BNB از CoinGecko (با کش ۶۰ ثانیه‌ای)
+ */
+let _bnbPriceCache: { value: number | null; ts: number } | null = null;
+const BNB_CACHE_TTL = 60000;
+
+async function fetchBNBPrice(): Promise<number | null> {
+  // کش ۶۰ ثانیه‌ای برای جلوگیری از rate limit
+  if (_bnbPriceCache && Date.now() - _bnbPriceCache.ts < BNB_CACHE_TTL) {
+    return _bnbPriceCache.value;
+  }
+  try {
+    const r = await fetch(
+      'https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd',
+      { cache: 'no-store' }
+    );
+    const d = await r.json();
+    const value = d?.binancecoin?.usd ?? null;
+    _bnbPriceCache = { value, ts: Date.now() };
+    return value;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * TVL و آمار کلی DEX
+ */
+export async function fetchAnalytics(): Promise<AnalyticsData | null> {
+  try {
+    const chainId = ARV_CONFIG.network.chainId as 56 | 97;
+    const provider = getDexProvider(chainId);
+    const factory = new ethers.Contract(
+      PANCAKE_V2_FACTORY[chainId],
+      FACTORY_ABI,
+      provider
+    );
+
+    // تعداد Pairها
+    let poolCount = 0;
+    try {
+      const len = await factory.allPairsLength();
+      poolCount = Number(len);
+    } catch {}
+
+    // Pair اصلی ARV/BNB
+    const wbnb = PANCAKE_V2[chainId].wrappedNative;
+    const arvToken = ARV_CONFIG.token.address;
+    const pairAddress = await getPairAddressSafe(
+      chainId,
+      arvToken,
+      wbnb
+    );
+
+    let arvReserve = '0';
+    let bnbReserve = '0';
+    let arvPrice = 0;
+    let tvlUSD = 0;
+
+    if (pairAddress && pairAddress !== ethers.ZeroAddress) {
+      try {
+        const pair = new ethers.Contract(pairAddress, PAIR_ABI, provider);
+        const [r0, r1] = await pair.getReserves();
+        const t0 = (await pair.token0()).toLowerCase();
+        const tA = arvToken.toLowerCase();
+
+        const arvR = t0 === tA ? r0 : r1;
+        const bnbR = t0 === tA ? r1 : r0;
+
+        arvReserve = ethers.formatUnits(arvR, 18);
+        bnbReserve = ethers.formatEther(bnbR);
+
+        const bnbNum = Number(bnbReserve);
+        const arvNum = Number(arvReserve);
+
+        if (arvNum > 0 && bnbNum > 0) {
+          const bnbPrice = await fetchBNBPrice();
+          if (bnbPrice !== null) {
+            arvPrice = (bnbNum / arvNum) * bnbPrice;
+            tvlUSD = bnbNum * bnbPrice * 2; // هر دو طرف Pool
+          }
+        }
+      } catch {}
+    }
+
+    const bnbPrice = await fetchBNBPrice();
+
+    return {
+      chainId,
+      tvlUSD,
+      poolCount,
+      arvPrice,
+      bnbPrice,
+      arvReserve,
+      bnbReserve,
+      pairAddress: pairAddress || '',
+      topPools: pairAddress
+        ? [
+            {
+              pairAddress,
+              token0: arvToken,
+              token1: wbnb,
+              symbol0: 'ARV',
+              symbol1: 'BNB',
+              reserve0: arvReserve,
+              reserve1: bnbReserve,
+              tvlUSD,
+            },
+          ]
+        : [],
+      lastUpdate: Date.now(),
+    };
+  } catch (e) {
+    console.error('fetchAnalytics error:', e);
+    return null;
+  }
+}
+
+/**
+ * گرفتن آدرس Pair (با try/catch)
+ */
+async function getPairAddressSafe(
+  chainId: 56 | 97,
+  tokenA: string,
+  tokenB: string
+): Promise<string | null> {
+  try {
+    const { getPairAddress } = await import('./dex-service');
+    return await getPairAddress(chainId, tokenA, tokenB);
+  } catch {
+    return null;
+  }
+}

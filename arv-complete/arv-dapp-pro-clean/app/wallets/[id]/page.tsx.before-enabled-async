@@ -1,0 +1,443 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
+import {
+  Lock, Fingerprint, Eye, EyeOff, Shield, Gift, User,
+  ArrowLeft, Loader2, AlertCircle, Check, Wallet as WalletIcon,
+  Send, Download, ArrowDownUp, RefreshCw, Coins
+} from 'lucide-react';
+import { GlowCard } from '@/components/ui/GlowCard';
+import { GradientButton } from '@/components/ui/GradientButton';
+import TokenLogo from '@/components/ui/TokenLogo';
+import AnimatedNumber from '@/components/ui/AnimatedNumber';
+import { loadWallet, hasWallet } from '@/lib/services/wallet-service';
+import { isBiometricAvailable, unlockWithBiometricPRF, isBiometricEnabledPRF } from '@/lib/services/biometric';
+import { useUserRole } from '@/lib/hooks/useUserRole';
+import { getARVBalance, getBNBBalance } from '@/lib/services/token-service';
+import { formatUnits } from 'viem';
+
+type WalletId = 'main' | 'reward' | 'user';
+
+const WALLET_INFO: Record<WalletId, { label: string; color: string; icon: any }> = {
+  main: { label: 'کیف اصلی', color: 'gold', icon: Shield },
+  reward: { label: 'کیف پاداش', color: 'green', icon: Gift },
+  user: { label: 'کیف کاربر', color: 'blue', icon: User },
+};
+
+export default function WalletLoginPage() {
+  const router = useRouter();
+  const params = useParams();
+  const walletId = (params?.id as WalletId) || 'user';
+
+  // ===== کیف‌های اصلی و پاداش فقط در افزونه و سایت اروند خبر =====
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (walletId === 'main' || walletId === 'reward')) {
+      window.location.replace('/wallets');
+    }
+  }, [walletId]);
+
+  // ===== محافظت از کیف‌های مالک (main و reward) =====
+  const { isAdmin, loading: roleLoading } = useUserRole();
+  const isOwnerWallet = walletId === 'main' || walletId === 'reward';
+  // در حالت loading هم دسترسی ممنوع است (تا زمانی که Admin تأیید شود)
+  const accessDenied = isOwnerWallet && (roleLoading || !isAdmin);
+
+  const [walletExists, setWalletExists] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricPRFEnabled, setBiometricPRFEnabled] = useState(false);
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [unlocked, setUnlocked] = useState(false);
+  const [walletData, setWalletData] = useState<any>(null);
+
+  // دارایی‌ها
+  const [arvBalance, setArvBalance] = useState('0');
+  const [bnbBalance, setBnbBalance] = useState('0');
+  const [assetsLoading, setAssetsLoading] = useState(false);
+
+  const info = WALLET_INFO[walletId] || WALLET_INFO.user;
+  const Icon = info.icon;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setWalletExists(hasWallet(walletId));
+    setBiometricEnabled(!!localStorage.getItem(`arv_cred_${walletId}`));
+    setBiometricPRFEnabled(isBiometricEnabledPRF(walletId));
+    isBiometricAvailable().then(setBiometricAvailable);
+  }, [walletId]);
+
+  useEffect(() => {
+    if (!unlocked || !walletData?.address) return;
+    loadAssets();
+    const id = setInterval(loadAssets, 30000);
+  return () => clearInterval(id);
+  }, [unlocked, walletData?.address]);
+
+  async function loadAssets() {
+    if (!walletData?.address) return;
+    try {
+      setAssetsLoading(true);
+      const [arv, bnb] = await Promise.all([
+        getARVBalance(walletData.address),
+        getBNBBalance(walletData.address),
+      ]);
+      setArvBalance(formatUnits(arv, 18));
+      setBnbBalance(formatUnits(bnb, 18));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAssetsLoading(false);
+    }
+  }
+
+  const handleUnlock = async () => {
+    if (!password) {
+      setError('رمز عبور را وارد کنید');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const wallet = await loadWallet(walletId, password);
+      if (!wallet) {
+        setError('رمز عبور اشتباه است');
+        return;
+      }
+      setWalletData(wallet);
+      setUnlocked(true);
+      // ذخیره آدرس برای دسترسی سریع
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`arv_${walletId}_address`, wallet.address);
+      }
+    } catch (e: any) {
+      setError(e.message || 'رمز عبور اشتباه است');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBiometric = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const pw = await unlockWithBiometricPRF(walletId);
+      const wallet = await loadWallet(walletId, pw);
+      if (wallet) {
+        setWalletData(wallet);
+        setUnlocked(true);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`arv_${walletId}_address`, wallet.address);
+        }
+        return;
+      }
+      setError('باز کردن کیف ناموفق بود. لطفاً با رمز وارد شوید.');
+    } catch (e: any) {
+      console.error('Biometric unlock error:', e);
+      setError(
+        e?.message === 'BIOMETRIC_NOT_ENABLED'
+          ? 'اثر انگشت برای این کیف فعال نشده است. با رمز وارد شوید.'
+          : 'تأیید اثر انگشت ناموفق بود. با رمز عبور وارد شوید.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const handleLock = () => {
+    setUnlocked(false);
+    setWalletData(null);
+    setPassword('');
+    setArvBalance('0');
+    setBnbBalance('0');
+  };
+
+  // ============ حالت ۱: کیف پول وجود ندارد ============
+  if (!walletExists && typeof window !== 'undefined') {
+    // ===== نمایش پیام «دسترسی غیرمجاز» =====
+  if (accessDenied) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="arv-card text-center py-8 px-6">
+            <div className="w-16 h-16 mx-auto rounded-full bg-[var(--arv-danger)]/15 flex items-center justify-center mb-4">
+              <Shield size={28} className="text-[var(--arv-danger)]" />
+            </div>
+            <div className="font-bold text-lg mb-2">دسترسی غیرمجاز</div>
+            <div className="text-sm text-[var(--arv-text-muted)] mb-6 leading-relaxed">
+              این کیف پول فقط برای مالک پروژه قابل دسترسی است. اگر فکر می‌کنید اشتباهی رخ داده، لطفاً با پشتیبانی تماس بگیرید.
+            </div>
+            <Link
+              href="/wallets"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--arv-gold)] text-[#050912] font-bold text-sm hover:scale-105 transition-all"
+            >
+              <ArrowLeft size={16} />
+              بازگشت به کیف پول‌ها
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <GlowCard glowColor="blue">
+          <div className="text-center py-6">
+            <div className="w-16 h-16 mx-auto rounded-full bg-[var(--arv-blue)]/40 flex items-center justify-center mb-4">
+              <WalletIcon size={28} className="text-[var(--arv-text-muted)]" />
+            </div>
+            <div className="font-bold mb-2">کیف پول {info.label} وجود ندارد</div>
+            <div className="text-xs text-[var(--arv-text-muted)] mb-4">
+              ابتدا باید این کیف پول را بسازید یا بازیابی کنید
+            </div>
+            <div className="flex gap-2 justify-center">
+              <GradientButton variant="gold" size="sm" href="/wallets/create">
+                ساخت کیف جدید
+              </GradientButton>
+              <GradientButton variant="outline" size="sm" href="/wallets">
+                بازگشت
+              </GradientButton>
+            </div>
+          </div>
+        </GlowCard>
+      </div>
+    );
+  }
+
+  // ============ حالت ۲: کیف پول باز شده (داشبورد) ============
+  if (unlocked && walletData) {
+    const arvValue = Number(arvBalance) * 0.00245;
+    const bnbValue = Number(bnbBalance) * 612.45;
+    const totalValue = arvValue + bnbValue;
+
+    return (
+      <div className="flex min-h-screen">
+        <main className="flex-1 overflow-x-hidden">
+          <div className="p-4 md:p-6 max-w-lg mx-auto space-y-4">
+
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl bg-${info.color === 'gold' ? '[var(--arv-gold)]/15 text-[var(--arv-gold)]' : info.color === 'green' ? '[var(--arv-success)]/15 text-[var(--arv-success)]' : 'blue-400/15 text-blue-400'} flex items-center justify-center`}>
+                  <Icon size={20} />
+                </div>
+                <div>
+                  <div className="font-bold text-sm">{info.label}</div>
+                  <div className="font-mono text-[10px] text-[var(--arv-text-muted)]">
+                    {walletData.address?.slice(0, 6)}...{walletData.address?.slice(-4)}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={handleLock}
+                className="p-2 rounded-lg bg-[var(--arv-warning)]/15 text-[var(--arv-warning)] hover:bg-[var(--arv-warning)]/25 transition-all"
+                title="قفل کردن کیف پول"
+              >
+                <Lock size={16} />
+              </button>
+            </div>
+
+            {/* Total Value */}
+            <GlowCard glowColor="gold">
+              <div className="text-center">
+                <div className="text-xs text-[var(--arv-text-muted)] mb-2">ارزش کل دارایی</div>
+                <div className="text-3xl font-bold gold-gradient mb-2">
+                  <AnimatedNumber value={totalValue} decimals={2} prefix="$" />
+                </div>
+                <div className="text-xs text-[var(--arv-text-muted)] flex items-center gap-1 justify-center">
+                  <RefreshCw size={10} className={assetsLoading ? 'animate-spin' : ''} />
+                  به‌روزرسانی خودکار
+                </div>
+              </div>
+            </GlowCard>
+
+            {/* Quick Actions */}
+            <div className="grid grid-cols-3 gap-2">
+              <Link href="/send" className="arv-card text-center hover:scale-[1.03] transition-all py-3">
+                <Send size={18} className="text-[var(--arv-gold)] mx-auto mb-1" />
+                <div className="text-[10px] font-bold">ارسال</div>
+              </Link>
+              <Link href="/receive" className="arv-card text-center hover:scale-[1.03] transition-all py-3">
+                <Download size={18} className="text-blue-400 mx-auto mb-1" />
+                <div className="text-[10px] font-bold">دریافت</div>
+              </Link>
+              <Link href="/swap" className="arv-card text-center hover:scale-[1.03] transition-all py-3">
+                <ArrowDownUp size={18} className="text-[var(--arv-success)] mx-auto mb-1" />
+                <div className="text-[10px] font-bold">سواپ</div>
+              </Link>
+            </div>
+
+            {/* Assets */}
+            <GlowCard glowColor="blue">
+              <div className="flex items-center gap-2 mb-3">
+                <Coins size={16} className="text-blue-400" />
+                <div className="font-bold text-sm">دارایی‌ها</div>
+              </div>
+              <div className="space-y-3">
+                {/* ARV */}
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--arv-blue)]/20">
+                  <TokenLogo symbol="ARV" size={36} />
+                  <div className="flex-1">
+                    <div className="font-bold text-sm">ARV</div>
+                    <div className="text-[10px] text-[var(--arv-text-muted)]">Arvand Khabar</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-sm" dir="ltr">
+                      <AnimatedNumber value={Number(arvBalance)} decimals={2} suffix=" ARV" />
+                    </div>
+                    <div className="text-[10px] text-[var(--arv-gold)]" dir="ltr">
+                      ${arvValue.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* BNB */}
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--arv-blue)]/20">
+                  <TokenLogo symbol="BNB" size={36} />
+                  <div className="flex-1">
+                    <div className="font-bold text-sm">BNB</div>
+                    <div className="text-[10px] text-[var(--arv-text-muted)]">Binance Coin</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-sm" dir="ltr">
+                      <AnimatedNumber value={Number(bnbBalance)} decimals={4} suffix=" BNB" />
+                    </div>
+                    <div className="text-[10px] text-[var(--arv-gold)]" dir="ltr">
+                      ${bnbValue.toFixed(2)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </GlowCard>
+
+            {/* Contract Info */}
+            <GlowCard glowColor="purple">
+              <div className="text-[10px] text-[var(--arv-text-muted)] mb-2">آدرس قرارداد ARV</div>
+              <code className="font-mono text-[10px] break-all block p-2 rounded-lg bg-[var(--arv-blue)]/30" dir="ltr">
+                {typeof window !== 'undefined' && require('@/lib/arv-config').ARV_CONFIG?.token?.address || '—'}
+              </code>
+            </GlowCard>
+
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // ============ حالت ۳: فرم ورود ============
+  return (
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="max-w-md w-full space-y-4">
+
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <Link href="/wallets" className="p-2 rounded-lg hover:bg-[var(--arv-blue)]/40 text-[var(--arv-gold)]">
+            <ArrowLeft size={18} />
+          </Link>
+          <div className="flex-1">
+            <div className="font-bold">{info.label}</div>
+            <div className="text-[10px] text-[var(--arv-text-muted)]">ورود به کیف پول</div>
+          </div>
+        </div>
+
+        {/* Wallet Info */}
+        <GlowCard glowColor={info.color as any}>
+          <div className="text-center py-4">
+            <div className={`w-16 h-16 mx-auto rounded-2xl bg-[var(--arv-gold)]/15 flex items-center justify-center mb-3`}>
+              <Icon size={28} className="text-[var(--arv-gold)]" />
+            </div>
+            <div className="font-bold">{info.label}</div>
+            <div className="text-[10px] text-[var(--arv-text-muted)] mt-1">
+              برای دسترسی، رمز عبور خود را وارد کنید
+            </div>
+          </div>
+        </GlowCard>
+
+        {/* Error */}
+        {error && (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--arv-danger)]/10 text-[var(--arv-danger)] text-xs">
+            <AlertCircle size={14} />
+            {error}
+          </div>
+        )}
+
+        {/* Biometric Button */}
+        {biometricPRFEnabled && biometricAvailable && (
+          <button
+            onClick={handleBiometric}
+            disabled={loading}
+            className="w-full p-4 rounded-2xl bg-gradient-to-br from-[var(--arv-blue)]/60 to-[var(--arv-blue)]/20 border border-[var(--arv-gold)]/30 hover:border-[var(--arv-gold)] transition-all flex items-center gap-3"
+          >
+            <div className="w-12 h-12 rounded-xl bg-[var(--arv-success)]/15 flex items-center justify-center">
+              <Fingerprint size={24} className="text-[var(--arv-success)]" />
+            </div>
+            <div className="flex-1 text-right">
+              <div className="font-bold text-sm">ورود با اثر انگشت</div>
+              <div className="text-[10px] text-[var(--arv-text-muted)]">سریع‌ترین راه ورود</div>
+            </div>
+            {loading && <Loader2 size={18} className="animate-spin text-[var(--arv-gold)]" />}
+          </button>
+        )}
+
+        {/* Divider */}
+        {biometricPRFEnabled && biometricAvailable && (
+          <div className="flex items-center gap-3 text-[10px] text-[var(--arv-text-muted)]">
+            <div className="flex-1 h-px bg-[var(--arv-gold)]/20"></div>
+            یا
+            <div className="flex-1 h-px bg-[var(--arv-gold)]/20"></div>
+          </div>
+        )}
+
+        {/* Password Form */}
+        <GlowCard glowColor="gold">
+          <label className="text-xs text-[var(--arv-text-muted)] mb-2 block">رمز عبور</label>
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleUnlock()}
+              placeholder="رمز عبور خود را وارد کنید"
+              className="w-full pr-10 pl-3 py-3 rounded-xl bg-[var(--arv-blue)]/30 border border-[var(--arv-gold)]/20 focus:border-[var(--arv-gold)] outline-none text-sm"
+              dir="ltr"
+              autoComplete="current-password"
+            />
+            <button
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--arv-text-muted)] hover:text-white"
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+          <GradientButton
+            variant="gold"
+            size="lg"
+            fullWidth
+            onClick={handleUnlock}
+            disabled={loading || !password}
+            icon={loading ? <Loader2 size={18} className="animate-spin" /> : <Lock size={18} />}
+          >
+            {loading ? 'در حال باز کردن...' : 'ورود به کیف پول'}
+          </GradientButton>
+        </GlowCard>
+
+        {/* Security Note */}
+        <div className="p-3 rounded-xl bg-[var(--arv-success)]/8 border border-[var(--arv-success)]/25">
+          <div className="flex items-start gap-2">
+            <Shield size={14} className="text-[var(--arv-success)] flex-shrink-0 mt-0.5" />
+            <p className="text-[10px] text-[var(--arv-text-muted)] leading-relaxed text-right">
+              رمز عبور شما فقط روی دستگاه شما پردازش می‌شود و هرگز به سرور ارسال نمی‌شود.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}

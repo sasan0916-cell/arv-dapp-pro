@@ -1,0 +1,17 @@
+{
+  "name": "arv-token",
+  "version": "1.7.3",
+  "scripts": {
+    "deploy:test": "hardhat run scripts/deploy.js --network bsctest",
+    "deploy:main": "hardhat run scripts/deploy.js --network bsc",
+    "verify:main": "hardhat run scripts/verify.js --network bsc",
+    "test:main": "hardhat run scripts/test.js --network bsc",
+    "verify:test": "hardhat run scripts/verify.js --network bsctest",
+    "test:test": "hardhat run scripts/test.js --network bsctest"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.0"
+  }
+}

@@ -1,0 +1,81 @@
+'use client';
+import { useState } from 'react';
+
+interface TokenLogoProps {
+  symbol: string;
+  size?: number;
+  className?: string;
+}
+
+const LOGOS: Record<string, string> = {
+  'ARV': '/arv-logo.png',
+  'BNB': 'https://cryptologos.cc/logos/bnb-bnb-logo.png',
+  'WBNB': 'https://cryptologos.cc/logos/bnb-bnb-logo.png',
+  'BTC': 'https://cryptologos.cc/logos/bitcoin-btc-logo.png',
+  'ETH': 'https://cryptologos.cc/logos/ethereum-eth-logo.png',
+  'SOL': 'https://cryptologos.cc/logos/solana-sol-logo.png',
+  'XRP': 'https://cryptologos.cc/logos/xrp-xrp-logo.png',
+  'USDT': 'https://cryptologos.cc/logos/tether-usdt-logo.png',
+  'USDC': 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png',
+  'ADA': 'https://cryptologos.cc/logos/cardano-ada-logo.png',
+  'DOGE': 'https://cryptologos.cc/logos/dogecoin-doge-logo.png',
+  'MATIC': 'https://cryptologos.cc/logos/polygon-matic-logo.png',
+  'DOT': 'https://cryptologos.cc/logos/polkadot-new-dot-logo.png',
+  'SHIB': 'https://cryptologos.cc/logos/shiba-inu-shib-logo.png',
+  'TRX': 'https://cryptologos.cc/logos/tron-trx-logo.png',
+};
+
+const COLORS: Record<string, string> = {
+  'ARV': '#d4af37',
+  'BNB': '#f0b90b',
+  'WBNB': '#f0b90b',
+  'BTC': '#f7931a',
+  'ETH': '#627eea',
+  'SOL': '#14f195',
+  'XRP': '#23292f',
+  'USDT': '#26a17b',
+  'USDC': '#2775ca',
+  'ADA': '#0033ad',
+  'DOGE': '#c2a633',
+  'MATIC': '#8247e5',
+  'DOT': '#e6007a',
+  'SHIB': '#ffa409',
+  'TRX': '#eb0029',
+};
+
+export default function TokenLogo({ symbol, size = 32, className = '' }: TokenLogoProps) {
+  const upperSymbol = (symbol || '').toUpperCase();
+  const [imgError, setImgError] = useState(false);
+  const logo = LOGOS[upperSymbol];
+  const bgColor = COLORS[upperSymbol] || '#d4af37';
+
+  if (!logo || imgError) {
+    return (
+      <div
+        style={{
+          width: size,
+          height: size,
+          backgroundColor: bgColor + '30',
+          color: bgColor,
+          fontSize: Math.max(size * 0.28, 9),
+          border: `1px solid ${bgColor}50`,
+        }}
+        className={'rounded-full flex items-center justify-center font-bold ' + className}
+      >
+        {upperSymbol.slice(0, 3)}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={logo}
+      alt={upperSymbol}
+      width={size}
+      height={size}
+      style={{ width: size, height: size }}
+      className={'rounded-full object-cover ' + className}
+      onError={() => setImgError(true)}
+    />
+  );
+}

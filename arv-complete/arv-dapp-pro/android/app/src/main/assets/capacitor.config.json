@@ -1,0 +1,11 @@
+{
+	"appId": "ir.arvandkhabar.arvsuperdapp",
+	"appName": "ARV Super DApp",
+	"webDir": "out",
+	"android": {
+		"allowMixedContent": false
+	},
+	"server": {
+		"cleartext": false
+	}
+}

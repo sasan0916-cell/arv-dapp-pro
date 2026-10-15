@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ARV Super DApp</string>
+    <string name="title_activity_main">ARV Super DApp</string>
+    <string name="package_name">ir.arvandkhabar.arvsuperdapp</string>
+    <string name="custom_url_scheme">ir.arvandkhabar.arvsuperdapp</string>
+</resources>

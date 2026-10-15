@@ -1,0 +1,17 @@
+{
+  "name": "arv-dex-deploy",
+  "version": "1.0.0",
+  "description": "ARV DEX contracts deployment",
+  "scripts": {
+    "compile": "hardhat compile",
+    "deploy:test": "hardhat run scripts/deploy.js --network bscTestnet",
+    "deploy:main": "hardhat run scripts/deploy.js --network bsc",
+    "verify:test": "hardhat run scripts/verify.js --network bscTestnet",
+    "verify:main": "hardhat run scripts/verify.js --network bsc"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.0",
+    "dotenv": "^16.4.0"
+  }
+}

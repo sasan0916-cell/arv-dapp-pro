@@ -1,0 +1,164 @@
+'use client';
+
+import Link from 'next/link';
+import Image from 'next/image';
+import { useState, useEffect } from 'react';
+import { Menu, Search, TrendingUp, TrendingDown } from 'lucide-react';
+import { ConnectButton } from './ConnectButton';
+import { useLanguage } from '@/lib/i18n';
+import { AdminButton } from './admin/AdminButton';
+
+interface HeaderProps {
+  onMenuClick?: () => void;
+}
+
+const TICKER_TOKENS = [
+  { symbol: 'ARV', price: 0.00245, change: 12.34 },
+  { symbol: 'BNB', price: 612.45, change: -1.23 },
+  { symbol: 'BTC', price: 67432.10, change: 2.45 },
+  { symbol: 'ETH', price: 3456.78, change: 1.87 },
+  { symbol: 'SOL', price: 145.67, change: 5.67 },
+  { symbol: 'XRP', price: 0.5234, change: -0.45 },
+];
+
+export function Header({ onMenuClick }: HeaderProps) {
+  const [mounted, setMounted] = useState(false);
+  const [tickerOffset, setTickerOffset] = useState(0);
+
+  useEffect(() => {
+    setMounted(true);
+    const interval = setInterval(() => {
+      setTickerOffset((prev) => (prev + 0.5) % 100);
+    }, 50);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <header className="sticky top-0 z-50">
+      {/* Main Header Bar */}
+      <div
+        className="relative"
+        style={{
+          background: 'linear-gradient(180deg, rgba(10, 25, 41, 0.95) 0%, rgba(5, 12, 25, 0.98) 100%)',
+          backdropFilter: 'blur(30px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(30px) saturate(180%)',
+          borderBottom: '1px solid rgba(212, 175, 55, 0.2)',
+          boxShadow: '0 4px 30px rgba(0, 0, 0, 0.5), inset 0 -1px 0 rgba(212, 175, 55, 0.1)',
+        }}
+      >
+        <div className="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
+
+          {/* Mobile Menu Button */}
+          <button
+            className="lg:hidden p-2 text-[var(--arv-gold)] hover:bg-[var(--arv-gold)]/10 rounded-lg transition-all"
+            onClick={onMenuClick}
+            aria-label="باز کردن منو"
+          >
+            <Menu size={24} />
+          </button>
+
+          {/* Mobile Logo */}
+          <Link href="/" className="lg:hidden flex items-center gap-2">
+            <div className="relative">
+              <div
+                className="absolute inset-0 rounded-full animate-pulse"
+                style={{
+                  background: 'radial-gradient(circle, rgba(212, 175, 55, 0.4) 0%, transparent 70%)',
+                  filter: 'blur(8px)',
+                  transform: 'scale(1.4)',
+                }}
+              />
+              <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[var(--arv-gold)]/40 shadow-lg shadow-[var(--arv-gold)]/30">
+                <Image
+                  src="/arv-logo.png"
+                  alt="ARV Logo"
+                  fill
+                  sizes="40px"
+                  className="object-contain"
+                  priority
+                />
+              </div>
+            </div>
+          </Link>
+
+          {/* Desktop Search */}
+          <div className="hidden lg:flex flex-1 max-w-md mx-4">
+            <div className="relative w-full group">
+              <Search
+                size={18}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--arv-text-muted)] group-focus-within:text-[var(--arv-gold)] transition-colors"
+              />
+              <input
+                type="text"
+                placeholder="جستجو در DApp..."
+                className="w-full pr-10 pl-4 py-2 rounded-xl bg-[var(--arv-blue)]/40 border border-[var(--arv-gold)]/20 focus:border-[var(--arv-gold)] outline-none text-sm transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Network Badge */}
+          <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-full bg-[var(--arv-blue)]/40 border border-[var(--arv-gold)]/30">
+            <span className="w-2 h-2 rounded-full bg-[var(--arv-success)] animate-pulse"></span>
+            <span className="text-xs font-bold">BNB Testnet</span>
+          </div>
+
+          {/* Desktop Logo */}
+          <Link href="/" className="hidden lg:flex items-center gap-2 mx-4">
+            <div className="relative">
+              <div
+                className="absolute inset-0 rounded-full animate-pulse"
+                style={{
+                  background: 'radial-gradient(circle, rgba(212, 175, 55, 0.3) 0%, transparent 70%)',
+                  filter: 'blur(8px)',
+                  transform: 'scale(1.3)',
+                }}
+              />
+              <div className="relative w-9 h-9 rounded-full overflow-hidden border border-[var(--arv-gold)]/40">
+                <Image
+                  src="/arv-logo.png"
+                  alt="ARV Logo"
+                  fill
+                  sizes="36px"
+                  className="object-contain"
+                  priority
+                />
+              </div>
+            </div>
+            <div className="text-sm font-bold gold-gradient">ARV</div>
+          </Link>
+
+          <AdminButton />
+          <ConnectButton />
+        </div>
+
+        {/* Ticker Tape */}
+        <div className="relative overflow-hidden border-t border-[var(--arv-gold)]/10 bg-[var(--arv-blue)]/30">
+          <div
+            className="flex gap-6 py-1.5 whitespace-nowrap"
+            style={{
+              transform: `translateX(${-tickerOffset * 10}px)`,
+              transition: 'transform 0.05s linear',
+            }}
+          >
+            {[...TICKER_TOKENS, ...TICKER_TOKENS, ...TICKER_TOKENS].map((token, i) => (
+              <div key={i} className="flex items-center gap-2 text-[10px] px-2">
+                <span className="font-bold text-[var(--arv-text-secondary)]">{token.symbol}</span>
+                <span className="text-[var(--arv-text-muted)]" dir="ltr">
+                  ${token.price < 1 ? token.price.toFixed(6) : token.price.toLocaleString()}
+                </span>
+                <span className={token.change >= 0 ? 'text-green-400' : 'text-red-400'}>
+                  {token.change >= 0 ? '+' : ''}{token.change.toFixed(2)}%
+                </span>
+                {token.change >= 0 ? (
+                  <TrendingUp size={10} className="text-green-400" />
+                ) : (
+                  <TrendingDown size={10} className="text-red-400" />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}

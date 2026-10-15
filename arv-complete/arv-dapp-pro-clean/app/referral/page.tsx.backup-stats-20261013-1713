@@ -1,0 +1,211 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowRight, Users, Copy, Check, Share2, ExternalLink, Gift, Info, AlertCircle } from 'lucide-react';
+import { useAccount } from 'wagmi';
+import { GlowCard } from '@/components/ui/GlowCard';
+import { GradientButton } from '@/components/ui/GradientButton';
+import { copyToClipboard } from '@/lib/utils';
+import { useLanguage } from '@/lib/i18n';
+import {
+  generateReferralCode,
+  buildReferralLink,
+  loadReferralData,
+  saveReferralData,
+  type ReferralData,
+} from '@/lib/services/referral-service';
+
+export default function ReferralPage() {
+  const router = useRouter();
+  const { address: externalAddress } = useAccount();
+  const { language } = useLanguage();
+  const en = language === 'en';
+
+  const [walletAddress, setWalletAddress] = useState('');
+  const [referralData, setReferralData] = useState<ReferralData | null>(null);
+  const [copied, setCopied] = useState<'code' | 'link' | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const userAddr = externalAddress || localStorage.getItem('arv_user_address') || '';
+    setWalletAddress(userAddr);
+
+    if (userAddr) {
+      const code = generateReferralCode(userAddr);
+      loadReferralData().then((data) => {
+        if (!data || data.address.toLowerCase() !== userAddr.toLowerCase()) {
+          const newData: ReferralData = {
+            code,
+            address: userAddr,
+            invitedAddresses: [],
+            createdAt: Date.now(),
+          };
+          saveReferralData(newData);
+          setReferralData(newData);
+        } else {
+          setReferralData(data);
+        }
+      });
+    }
+  }, [externalAddress]);
+
+  const handleCopy = async (text: string, type: 'code' | 'link') => {
+    const ok = await copyToClipboard(text);
+    if (ok) {
+      setCopied(type);
+      setTimeout(() => setCopied(null), 2000);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!referralData) return;
+    const link = buildReferralLink(referralData.code);
+    const text = en
+      ? `Join ARV Super DApp with my referral link:\n${link}`
+      : `با لینک دعوت من به ARV Super DApp بپیوندید:\n${link}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: 'ARV Super DApp', text, url: link }); } catch {}
+    } else {
+      handleCopy(link, 'link');
+    }
+  };
+
+  const link = referralData ? buildReferralLink(referralData.code) : '';
+
+  if (!walletAddress) {
+    return (
+      <div className="min-h-screen bg-[var(--arv-blue-dark)] p-4 md:p-6 max-w-lg mx-auto">
+        <div className="flex items-center gap-3 mb-6">
+          <button onClick={() => router.back()} className="p-2 rounded-lg hover:bg-[var(--arv-blue)]/40 text-[var(--arv-gold)]">
+            <ArrowRight size={20} />
+          </button>
+          <h1 className="text-xl font-bold gold-gradient">{en ? 'Refer Friends' : 'دعوت دوستان'}</h1>
+        </div>
+        <GlowCard glowColor="gold">
+          <div className="flex items-start gap-3">
+            <AlertCircle size={20} className="text-[var(--arv-gold)] shrink-0 mt-1" />
+            <div className="text-sm">
+              {en
+                ? 'Connect your wallet or create an internal wallet first to get your referral code.'
+                : 'برای دریافت کد دعوت، ابتدا کیف پول خود را وصل کنید یا یک کیف داخلی بسازید.'}
+            </div>
+          </div>
+        </GlowCard>
+        <div className="mt-4">
+          <GradientButton variant="gold" size="lg" fullWidth onClick={() => router.push('/wallets')}>
+            {en ? 'Open Wallets' : 'رفتن به کیف پول‌ها'}
+          </GradientButton>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[var(--arv-blue-dark)]">
+      <div className="p-4 md:p-6 max-w-lg mx-auto space-y-4">
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.back()} className="p-2 rounded-lg hover:bg-[var(--arv-blue)]/40 text-[var(--arv-gold)]">
+            <ArrowRight size={20} />
+          </button>
+          <div>
+            <h1 className="text-xl font-bold gold-gradient">{en ? 'Refer Friends' : 'دعوت دوستان'}</h1>
+            <p className="text-xs text-[var(--arv-text-muted)] mt-1">
+              {en ? 'Get 100 points for each friend you invite' : 'با دعوت هر دوست، ۱۰۰ امتیاز بگیرید'}
+            </p>
+          </div>
+        </div>
+
+        <GlowCard glowColor="gold">
+          <div className="text-xs text-[var(--arv-text-muted)] mb-2">{en ? 'Your Referral Code' : 'کد دعوت شما'}</div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex-1 p-3 rounded-xl bg-[var(--arv-blue)]/40 border border-[var(--arv-gold)]/30 font-mono text-lg font-bold text-[var(--arv-gold)] text-center" dir="ltr">
+              {referralData?.code || '—'}
+            </div>
+            <button
+              onClick={() => referralData && handleCopy(referralData.code, 'code')}
+              className="p-3 rounded-xl bg-[var(--arv-gold)]/20 text-[var(--arv-gold)] hover:bg-[var(--arv-gold)]/30 transition-all"
+            >
+              {copied === 'code' ? <Check size={20} /> : <Copy size={20} />}
+            </button>
+          </div>
+
+          <div className="text-xs text-[var(--arv-text-muted)] mb-2">{en ? 'Your Referral Link' : 'لینک دعوت شما'}</div>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 p-3 rounded-xl bg-[var(--arv-blue)]/40 border border-[var(--arv-gold)]/30 font-mono text-[10px] text-[var(--arv-text-muted)] truncate" dir="ltr">
+              {link}
+            </div>
+            <button
+              onClick={() => handleCopy(link, 'link')}
+              className="p-3 rounded-xl bg-[var(--arv-gold)]/20 text-[var(--arv-gold)] hover:bg-[var(--arv-gold)]/30 transition-all"
+            >
+              {copied === 'link' ? <Check size={20} /> : <Copy size={20} />}
+            </button>
+          </div>
+
+          <div className="mt-4">
+            <GradientButton variant="gold" size="md" fullWidth onClick={handleShare} icon={<Share2 size={16} />}>
+              {en ? 'Share with friends' : 'ارسال به دوستان'}
+            </GradientButton>
+          </div>
+        </GlowCard>
+
+        <GlowCard glowColor="blue">
+          <div className="flex items-center gap-3 mb-4">
+            <Users size={20} className="text-[var(--arv-gold)]" />
+            <div className="font-bold text-sm">{en ? 'Referral Stats' : 'آمار دعوت'}</div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-4 rounded-xl bg-[var(--arv-blue)]/30 text-center">
+              <div className="text-2xl font-bold text-[var(--arv-gold)]">{referralData?.invitedAddresses.length || 0}</div>
+              <div className="text-xs text-[var(--arv-text-muted)] mt-1">{en ? 'Total Referrals' : 'تعداد دعوت‌ها'}</div>
+            </div>
+            <div className="p-4 rounded-xl bg-[var(--arv-blue)]/30 text-center">
+              <div className="text-2xl font-bold text-[var(--arv-success)]">{((referralData?.invitedAddresses.length || 0) * 100).toLocaleString('fa-IR')}</div>
+              <div className="text-xs text-[var(--arv-text-muted)] mt-1">{en ? 'Points earned' : 'امتیاز کسب‌شده'}</div>
+            </div>
+          </div>
+          {(!referralData || referralData.invitedAddresses.length === 0) && (
+            <div className="mt-4 text-xs text-center text-[var(--arv-text-muted)]">
+              {en ? "You haven't invited anyone yet" : 'هنوز کسی را دعوت نکرده‌اید'}
+            </div>
+          )}
+        </GlowCard>
+
+        <GlowCard glowColor="gold">
+          <div className="flex items-start gap-3">
+            <Info size={18} className="text-[var(--arv-gold)] shrink-0 mt-1" />
+            <div className="text-xs text-[var(--arv-text-muted)] space-y-1">
+              <div className="font-bold text-white mb-1">{en ? 'How it works' : 'نحوه کار'}</div>
+              <div>• {en ? 'Share your link with friends' : 'لینک خود را به دوستان ارسال کنید'}</div>
+              <div>• {en ? 'When they join and create a wallet, they are linked to you' : 'وقتی دوستتان عضو شود و کیف بسازد، به شما ثبت می‌شود'}</div>
+              <div>• {en ? 'You receive 100 points per successful referral' : 'برای هر دعوت موفق، ۱۰۰ امتیاز دریافت می‌کنید'}</div>
+              <div>• {en ? 'Points can be converted to ARV tokens on the main site' : 'امتیازها در سایت اصلی قابل تبدیل به ARV هستند'}</div>
+            </div>
+          </div>
+        </GlowCard>
+
+        <GlowCard glowColor="gold">
+          <a
+            href="https://arvandkhabar.ir/?page_id=1649"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 group"
+          >
+            <div className="w-12 h-12 rounded-xl bg-[var(--arv-gold)]/15 flex items-center justify-center shrink-0">
+              <Gift size={24} className="text-[var(--arv-gold)]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-sm flex items-center gap-1">
+                {en ? 'Earn ARV from activity' : 'کسب ARV از فعالیت'}
+                <ExternalLink size={12} className="opacity-50 group-hover:opacity-100" />
+              </div>
+              <div className="text-[11px] text-[var(--arv-text-muted)] mt-0.5">
+                {en ? 'Earn points on ARVand Khabar and convert to ARV' : 'با فعالیت در سایت ARVand Khabar، امتیاز بگیرید و ARV دریافت کنید'}
+              </div>
+            </div>
+          </a>
+        </GlowCard>
+      </div>
+    </div>
+  );
+}

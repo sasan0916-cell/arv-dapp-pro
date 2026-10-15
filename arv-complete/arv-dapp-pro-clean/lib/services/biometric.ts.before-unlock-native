@@ -1,0 +1,428 @@
+// WebAuthn + Capacitor Native Biometric
+import { Capacitor } from '@capacitor/core';
+import { BiometricAuth, BiometryErrorType } from '@aparajita/capacitor-biometric-auth';
+
+const CRED_KEY_PREFIX = 'arv_cred_';
+const RP_NAME = 'ARV Super DApp';
+
+// تشخیص خودکار پلتفرم
+export function isNativePlatform(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return Capacitor.isNativePlatform();
+  } catch {
+    return false;
+  }
+}
+
+export async function isBiometricAvailable(): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  if (!window.PublicKeyCredential) return false;
+  try {
+    return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+  } catch {
+    return false;
+  }
+}
+
+export async function registerBiometric(
+  walletId: string,
+  userName: string
+): Promise<boolean> {
+  if (!(await isBiometricAvailable())) return false;
+  try {
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const userId = crypto.getRandomValues(new Uint8Array(16));
+
+    const credential = (await navigator.credentials.create({
+      publicKey: {
+        challenge,
+        rp: { name: RP_NAME, id: window.location.hostname },
+        user: {
+          id: userId,
+          name: `arv_${walletId}`,
+          displayName: userName,
+        },
+        pubKeyCredParams: [
+          { type: 'public-key', alg: -7 },
+          { type: 'public-key', alg: -257 },
+        ],
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',
+          userVerification: 'required',
+        },
+        timeout: 60000,
+        attestation: 'none',
+      },
+    })) as PublicKeyCredential;
+
+    if (!credential) return false;
+
+    const credId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+    localStorage.setItem(
+      `${CRED_KEY_PREFIX}${walletId}`,
+      JSON.stringify({ id: credId, walletId, createdAt: Date.now() })
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function verifyBiometric(walletId: string): Promise<boolean> {
+  const stored = localStorage.getItem(`${CRED_KEY_PREFIX}${walletId}`);
+  if (!stored) return false;
+
+  try {
+    const data = JSON.parse(stored);
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const credIdBuf = Uint8Array.from(atob(data.id), (c) => c.charCodeAt(0));
+
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        allowCredentials: [
+          { id: credIdBuf, type: 'public-key', transports: ['internal'] },
+        ],
+        userVerification: 'required',
+        timeout: 60000,
+      },
+    });
+    return !!assertion;
+  } catch {
+    return false;
+  }
+}
+
+export function hasBiometric(walletId: string): boolean {
+  return !!localStorage.getItem(`${CRED_KEY_PREFIX}${walletId}`);
+}
+
+export function removeBiometric(walletId: string): void {
+  localStorage.removeItem(`${CRED_KEY_PREFIX}${walletId}`);
+}
+
+export async function enableBiometric(
+  walletId: string,
+  userName: string
+): Promise<boolean> {
+  return registerBiometric(walletId, userName);
+}
+
+export async function unlockWithBiometric(walletId: string): Promise<boolean> {
+  return verifyBiometric(walletId);
+}
+
+export function disableBiometric(walletId: string): void {
+  removeBiometric(walletId);
+}
+
+
+// ===== اثر انگشت مدیرکل =====
+const ADMIN_CRED_KEY = 'arv_admin_biometric';
+
+export function hasAdminBiometric(): boolean {
+  try {
+    return !!localStorage.getItem(ADMIN_CRED_KEY);
+  } catch {
+    return false;
+  }
+}
+
+export function removeAdminBiometric(): void {
+  try {
+    localStorage.removeItem(ADMIN_CRED_KEY);
+  } catch {}
+}
+
+// ثبت اثر انگشت مدیر (فقط بعد از ورود موفق با رمز صدا زده شود)
+export async function registerAdminBiometric(): Promise<boolean> {
+  if (!(await isBiometricAvailable())) return false;
+  try {
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const userId = crypto.getRandomValues(new Uint8Array(16));
+
+    const credential = (await navigator.credentials.create({
+      publicKey: {
+        challenge,
+        rp: { name: RP_NAME, id: window.location.hostname },
+        user: { id: userId, name: 'arv_admin', displayName: 'ARV Admin' },
+        pubKeyCredParams: [
+          { type: 'public-key', alg: -7 },
+          { type: 'public-key', alg: -257 },
+        ],
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',
+          userVerification: 'required',
+        },
+        timeout: 60000,
+        attestation: 'none',
+      },
+    })) as PublicKeyCredential | null;
+
+    if (!credential) return false;
+
+    const credId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+    localStorage.setItem(
+      ADMIN_CRED_KEY,
+      JSON.stringify({ id: credId, createdAt: Date.now() })
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function verifyAdminBiometric(): Promise<boolean> {
+  try {
+    const stored = localStorage.getItem(ADMIN_CRED_KEY);
+    if (!stored) return false;
+    const data = JSON.parse(stored);
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const credIdBuf = Uint8Array.from(atob(data.id), (c) => c.charCodeAt(0));
+
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        allowCredentials: [
+          { id: credIdBuf, type: 'public-key', transports: ['internal'] },
+        ],
+        userVerification: 'required',
+        timeout: 60000,
+      },
+    });
+    return !!assertion;
+  } catch {
+    return false;
+  }
+}
+
+// ============================================================
+// توابع جدید برای ذخیره امن رمز عبور با WebCrypto
+// ============================================================
+
+const PRF_KEY_PREFIX = 'arv_prf_';
+
+async function deriveKeySafe(secret: string, salt: Uint8Array): Promise<CryptoKey> {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey']
+  );
+  // تبدیل salt به BufferSource معتبر
+  const saltBuffer = new Uint8Array(salt).buffer;
+  return crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: saltBuffer,
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+export async function savePasswordSecurely(walletId: string, password: string): Promise<void> {
+  try {
+    const stored = localStorage.getItem(`${CRED_KEY_PREFIX}${walletId}`);
+    if (!stored) return;
+    const data = JSON.parse(stored);
+    const secret = `arv_${walletId}_${data.id.slice(0, 16)}`;
+
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(new ArrayBuffer(12)));
+    const key = await deriveKeySafe(secret, salt);
+    const enc = new TextEncoder();
+    const encrypted = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: new Uint8Array(iv).buffer },
+      key,
+      enc.encode(password)
+    );
+
+    const combined = new Uint8Array(salt.length + iv.length + encrypted.byteLength);
+    combined.set(salt, 0);
+    combined.set(iv, salt.length);
+    combined.set(new Uint8Array(encrypted), salt.length + iv.length);
+
+    localStorage.setItem(`${PRF_KEY_PREFIX}${walletId}`, btoa(String.fromCharCode(...combined)));
+  } catch (e) {
+    console.error('savePasswordSecurely failed', e);
+  }
+}
+
+export async function getPasswordWithBiometric(walletId: string): Promise<string | null> {
+  try {
+    const stored = localStorage.getItem(`${CRED_KEY_PREFIX}${walletId}`);
+    const encryptedData = localStorage.getItem(`${PRF_KEY_PREFIX}${walletId}`);
+    if (!stored || !encryptedData) return null;
+
+    const data = JSON.parse(stored);
+    const secret = `arv_${walletId}_${data.id.slice(0, 16)}`;
+    const combined = Uint8Array.from(atob(encryptedData), (c) => c.charCodeAt(0));
+
+    const salt = combined.slice(0, 16);
+    const iv = combined.slice(16, 28);
+    const encrypted = combined.slice(28);
+
+    const key = await deriveKeySafe(secret, salt);
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: new Uint8Array(iv).buffer },
+      key,
+      new Uint8Array(encrypted).buffer
+    );
+    return new TextDecoder().decode(decrypted);
+  } catch (e) {
+    console.error('getPasswordWithBiometric failed', e);
+    return null;
+  }
+}
+
+
+// ============================================================
+// WebAuthn PRF Extension برای ذخیره امن رمز با اثر انگشت
+// ============================================================
+
+const BIO_SUFFIX = '_bio';
+
+const b64 = (b: ArrayBuffer | Uint8Array): string =>
+  btoa(String.fromCharCode(...new Uint8Array(b as ArrayBuffer)));
+
+const unb64 = (s: string): Uint8Array<ArrayBuffer> => {
+  const bin = atob(s);
+  const out = new Uint8Array(new ArrayBuffer(bin.length));
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+};
+
+async function prfKey(credId: BufferSource, salt: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
+  const assertion = (await navigator.credentials.get({
+    publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      allowCredentials: [{ type: 'public-key', id: credId }],
+      userVerification: 'required',
+      extensions: { prf: { eval: { first: salt } } },
+    } as any,
+  })) as PublicKeyCredential;
+
+  const prfResults = (assertion.getClientExtensionResults() as any).prf?.results?.first;
+  if (!prfResults) throw new Error('PRF_UNSUPPORTED');
+
+  return crypto.subtle.importKey('raw', prfResults, 'AES-GCM', false, ['encrypt', 'decrypt']);
+}
+
+export async function enableBiometricPRF(
+  walletId: string,
+  label: string,
+  password: string
+): Promise<boolean> {
+  // ===== روی APK: استفاده از پلاگین بومی Capacitor =====
+  if (isNativePlatform()) {
+    try {
+      const available = await BiometricAuth.checkBiometry();
+      if (!available.isAvailable) {
+        throw new Error('BIOMETRIC_UNAVAILABLE');
+      }
+
+      await BiometricAuth.authenticate({
+        reason: 'برای فعال‌سازی اثر انگشت ARV',
+        cancelTitle: 'لغو',
+        allowDeviceCredential: false,
+        androidTitle: 'ARV DApp',
+        androidSubtitle: 'تأیید هویت',
+        androidConfirmationRequired: false,
+      });
+
+      const { Preferences } = await import('@capacitor/preferences');
+      await Preferences.set({
+        key: `arv_${walletId}_bio_native`,
+        value: password,
+      });
+
+      return true;
+    } catch (e) {
+      console.error('Native biometric error:', e);
+      throw new Error('NATIVE_BIOMETRIC_FAILED');
+    }
+  }
+
+  // ===== روی وب: WebAuthn PRF (فعلی) =====
+  if (!(await isBiometricAvailable())) throw new Error('BIOMETRIC_UNAVAILABLE');
+
+  const salt = crypto.getRandomValues(new Uint8Array(new ArrayBuffer(32)));
+
+  const cred = (await navigator.credentials.create({
+    publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp: { name: RP_NAME, id: window.location.hostname },
+      user: {
+        id: new TextEncoder().encode(walletId),
+        name: label,
+        displayName: label,
+      },
+      pubKeyCredParams: [
+        { type: 'public-key', alg: -7 },
+        { type: 'public-key', alg: -257 },
+      ],
+      authenticatorSelection: {
+        authenticatorAttachment: 'platform',
+        userVerification: 'required',
+        residentKey: 'preferred',
+      },
+      extensions: { prf: {} },
+    } as any,
+  })) as PublicKeyCredential;
+
+  if (!cred) throw new Error('CREDENTIAL_FAILED');
+
+  const prfEnabled = (cred.getClientExtensionResults() as any).prf?.enabled;
+  if (!prfEnabled) throw new Error('PRF_UNSUPPORTED');
+
+  const key = await prfKey(cred.rawId, salt);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    new TextEncoder().encode(password)
+  );
+
+  localStorage.setItem(
+    'arv_' + walletId + BIO_SUFFIX,
+    JSON.stringify({
+      credId: b64(cred.rawId),
+      salt: b64(salt),
+      iv: b64(iv),
+      ct: b64(ct),
+    })
+  );
+
+  return true;
+}
+
+export function isBiometricEnabledPRF(walletId: string): boolean {
+  return !!localStorage.getItem('arv_' + walletId + BIO_SUFFIX);
+}
+
+export async function unlockWithBiometricPRF(walletId: string): Promise<string> {
+  const raw = localStorage.getItem('arv_' + walletId + BIO_SUFFIX);
+  if (!raw) throw new Error('BIOMETRIC_NOT_ENABLED');
+
+  const d = JSON.parse(raw);
+  const key = await prfKey(unb64(d.credId), unb64(d.salt));
+  const pt = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: unb64(d.iv) },
+    key,
+    unb64(d.ct)
+  );
+
+  return new TextDecoder().decode(pt);
+}
+
+export function disableBiometricPRF(walletId: string): void {
+  localStorage.removeItem('arv_' + walletId + BIO_SUFFIX);
+}

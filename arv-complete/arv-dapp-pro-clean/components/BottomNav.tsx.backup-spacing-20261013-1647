@@ -1,0 +1,138 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+import { Home, BarChart3, Wallet, ArrowLeftRight, Settings, Droplets, Bell, Users } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
+
+const NAV_ITEMS = [
+  { href: '/', labelFa: 'خانه', labelEn: 'Home', icon: Home },
+  { href: '/market', labelFa: 'بازار', labelEn: 'Market', icon: BarChart3 },
+  { href: '/swap', labelFa: 'سواپ', labelEn: 'Swap', icon: ArrowLeftRight },
+  { href: '/wallets', labelFa: 'کیف پول', labelEn: 'Wallet', icon: Wallet },
+  { href: '/referral', labelFa: 'دعوت', labelEn: 'Referral', icon: Users },
+  { href: '/alerts', labelFa: 'هشدارها', labelEn: 'Alerts', icon: Bell },
+  { href: '/settings', labelFa: 'تنظیمات', labelEn: 'Settings', icon: Settings },
+];
+
+export function BottomNav() {
+  const pathname = usePathname();
+  const { language } = useLanguage();
+  const en = language === 'en';
+  const [ripple, setRipple] = useState<string | null>(null);
+
+  return (
+    <nav
+      className="lg:hidden fixed bottom-4 left-3 right-3 z-40 rounded-3xl overflow-hidden"
+      style={{
+        background: 'linear-gradient(180deg, rgba(20, 40, 70, 0.85) 0%, rgba(5, 12, 25, 0.95) 100%)',
+                        border: '1px solid rgba(212, 175, 55, 0.25)',
+        boxShadow: '0 10px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(212, 175, 55, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+      }}
+    >
+      <div className="flex items-center justify-around px-1 py-2.5 relative">
+        {NAV_ITEMS.map((item) => {
+          const isActive =
+            pathname === item.href ||
+            (item.href !== '/' && pathname.startsWith(item.href));
+          const Icon = item.icon;
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => {
+                setRipple(item.href);
+                setTimeout(() => setRipple(null), 500);
+              }}
+              className="flex flex-col items-center gap-1 px-1.5 py-1 flex-1 relative"
+            >
+              {/* Active Indicator Dot */}
+              <span
+                className="absolute top-0 h-1 rounded-full transition-all duration-300"
+                style={{
+                  width: isActive ? '20px' : '0px',
+                  background: 'linear-gradient(90deg, transparent, #d4af37, transparent)',
+                  boxShadow: isActive ? '0 0 10px rgba(212, 175, 55, 0.8)' : 'none',
+                  opacity: isActive ? 1 : 0,
+                }}
+              />
+
+              <div className="relative">
+                {/* Glow Effect for Active */}
+                {isActive && (
+                  <div
+                    className="absolute inset-0 rounded-2xl animate-pulse"
+                    style={{
+                      background: 'radial-gradient(circle, rgba(212, 175, 55, 0.35) 0%, transparent 70%)',
+                      filter: 'blur(8px)',
+                      transform: 'scale(1.5)',
+                    }}
+                  />
+                )}
+
+                <div
+                  className="relative w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300"
+                  style={{
+                    background: isActive
+                      ? 'linear-gradient(135deg, #f4d03f 0%, #d4af37 50%, #b8941f 100%)'
+                      : 'transparent',
+                    boxShadow: isActive
+                      ? '0 6px 20px rgba(212, 175, 55, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
+                      : 'none',
+                    transform: isActive ? 'translateY(-3px) scale(1.05)' : 'none',
+                  }}
+                >
+                  <Icon
+                    size={22}
+                    strokeWidth={isActive ? 2.6 : 2}
+                    style={{
+                      color: isActive ? '#050912' : '#94a3b8',
+                      filter: isActive ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' : 'none',
+                      transition: 'all 0.3s ease',
+                    }}
+                  />
+                </div>
+
+                {/* Ripple Effect */}
+                {ripple === item.href && (
+                  <span
+                    className="absolute inset-0 rounded-2xl pointer-events-none"
+                    style={{
+                      background: 'radial-gradient(circle, rgba(212, 175, 55, 0.6) 0%, transparent 70%)',
+                      animation: 'ripple 0.5s ease-out',
+                    }}
+                  />
+                )}
+              </div>
+
+              <span
+                className="text-[10px] font-bold transition-all duration-300"
+                style={{
+                  color: isActive ? '#d4af37' : '#64748b',
+                  textShadow: isActive ? '0 0 10px rgba(212, 175, 55, 0.5)' : 'none',
+                }}
+              >
+                {en ? item.labelEn : item.labelFa}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+
+      <style jsx>{`
+        @keyframes ripple {
+          0% {
+            transform: scale(0.5);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(2);
+            opacity: 0;
+          }
+        }
+      `}</style>
+    </nav>
+  );
+}

@@ -1,0 +1,82 @@
+/**
+ * سرویس Referral - سیستم دعوت اختصاصی DApp
+ * کد از آدرس کیف کاربر تولید می‌شود
+ */
+
+import { storageGet, storageSet } from './storage';
+
+const REFERRAL_KEY = 'arv_referral_data';
+
+export interface ReferralData {
+  code: string;
+  address: string;
+  invitedAddresses: string[];
+  createdAt: number;
+}
+
+/**
+ * تولید کد اختصاصی از آدرس کیف
+ */
+export function generateReferralCode(address: string): string {
+  if (!address) return '';
+  const clean = address.toLowerCase().replace('0x', '');
+  // ۸ کاراکتر اول از hash آدرس
+  let hash = 0;
+  for (let i = 0; i < clean.length; i++) {
+    hash = ((hash << 5) - hash) + clean.charCodeAt(i);
+    hash = hash & hash;
+  }
+  const hex = Math.abs(hash).toString(36).toUpperCase().padStart(6, '0').slice(0, 6);
+  return `ARV${hex}`;
+}
+
+/**
+ * ذخیره اطلاعات Referral
+ */
+export async function saveReferralData(data: ReferralData): Promise<void> {
+  await storageSet(REFERRAL_KEY, JSON.stringify(data));
+}
+
+/**
+ * خواندن اطلاعات Referral
+ */
+export async function loadReferralData(): Promise<ReferralData | null> {
+  try {
+    const raw = await storageGet(REFERRAL_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * ساخت لینک دعوت
+ */
+export function buildReferralLink(code: string, baseUrl?: string): string {
+  const base = baseUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://arv-dapp-pro.surge.sh');
+  return `${base}/?ref=${code}`;
+}
+
+/**
+ * ذخیره کد دعوت‌کننده (وقتی کاربر با لینک میاد)
+ */
+export async function saveReferrerCode(code: string): Promise<void> {
+  await storageSet('arv_referrer_code', code);
+}
+
+/**
+ * خواندن کد دعوت‌کننده
+ */
+export async function loadReferrerCode(): Promise<string | null> {
+  return await storageGet('arv_referrer_code');
+}
+
+/**
+ * دریافت کد از URL
+ */
+export function getRefFromUrl(): string | null {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+  return params.get('ref');
+}
