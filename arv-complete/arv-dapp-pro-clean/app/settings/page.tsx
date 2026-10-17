@@ -25,6 +25,7 @@ export default function SettingsPage() {
     price: true,
   });
   const [biometric, setBiometric] = useState(false);
+  const [autoLockTimeout, setAutoLockTimeout] = useState<number>(5);
   const [twoFA, setTwoFA] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
@@ -32,6 +33,13 @@ export default function SettingsPage() {
     if (typeof window === 'undefined') return;
     const savedTheme = localStorage.getItem('arv_theme') as Theme;
     const savedBiometric = localStorage.getItem('arv_biometric_enabled') === 'true';
+    const savedAutoLock = localStorage.getItem('arv_auto_lock_timeout_minutes');
+    if (savedAutoLock !== null) {
+      const parsed = parseInt(savedAutoLock, 10);
+      if ([1, 5, 15, 30, 0].includes(parsed)) {
+        setAutoLockTimeout(parsed);
+      }
+    }
 
     if (savedTheme) setTheme(savedTheme);
     if (savedBiometric) setBiometric(savedBiometric);
@@ -462,6 +470,48 @@ export default function SettingsPage() {
                     }`}
                   />
                 </button>
+              </div>
+
+              {/* 🔒 Auto-Lock Timeout Selector */}
+              <div className="p-3 rounded-xl bg-[var(--arv-blue)]/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">⏱</span>
+                  <div>
+                    <div className="text-sm font-bold">قفل خودکار کیف پول</div>
+                    <div className="text-xs text-[var(--arv-text-muted)]">
+                      {en ? 'Auto-lock after inactivity' : 'مدت زمان باز ماندن کیف پول'}
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  {[
+                    { value: 1, label: en ? '1 min' : '۱ دقیقه' },
+                    { value: 5, label: en ? '5 min' : '۵ دقیقه' },
+                    { value: 15, label: en ? '15 min' : '۱۵ دقیقه' },
+                    { value: 30, label: en ? '30 min' : '۳۰ دقیقه' },
+                    { value: 0, label: en ? 'Never' : 'هرگز' },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => {
+                        setAutoLockTimeout(opt.value);
+                        localStorage.setItem('arv_auto_lock_timeout_minutes', String(opt.value));
+                      }}
+                      className={`py-2 rounded-lg text-xs font-bold transition-all ${
+                        autoLockTimeout === opt.value
+                          ? 'bg-[var(--arv-gold)] text-[var(--arv-blue-dark)]'
+                          : 'bg-[var(--arv-blue)]/40 text-[var(--arv-text-muted)] hover:bg-[var(--arv-blue)]/60'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="text-[10px] text-[var(--arv-text-muted)] mt-2">
+                  {en 
+                    ? 'Wallet will auto-lock after this period of inactivity'
+                    : 'کیف پول بعد از این مدت بی‌فعالیتی قفل می‌شود'}
+                </div>
               </div>
             </div>
           </GlowCard>

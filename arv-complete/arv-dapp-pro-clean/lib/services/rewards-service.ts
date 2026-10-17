@@ -183,10 +183,14 @@ export async function getLpAllowance(userAddress: string): Promise<string> {
 }
 
 // ============ Actions (signed) ============
-export async function approveLp(privateKey: string): Promise<{ hash: string }> {
+export async function approveLp(privateKey: string, amount?: string): Promise<{ hash: string }> {
   const lp = signedLp(privateKey);
-  const max = ethers.MaxUint256;
-  const tx = await lp.approve(REWARDS_ADDRESS, max);
+  // ✅ امن: فقط به اندازه‌ی مبلغ مشخص (یا حداکثر ۱۰۰ LP اگه مشخص نکرد)
+  // برای مقادیر بزرگ، باید کاربر مقدار دقیق رو وارد کنه
+  const approveAmount = amount 
+    ? ethers.parseUnits(amount, 18)
+    : ethers.parseUnits('100', 18);  // fallback: 100 LP
+  const tx = await lp.approve(REWARDS_ADDRESS, approveAmount);
   return { hash: tx.hash };
 }
 

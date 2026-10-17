@@ -152,7 +152,11 @@ export default function FarmsPage() {
       let result: { hash: string };
 
       if (action === 'approve') {
-        result = await approveLp(walletData.privateKey);
+        // ✅ امنیت: approve فقط به اندازه‌ی مبلغ استیک
+        if (!stakeAmount || parseFloat(stakeAmount) <= 0) {
+          throw new Error(en ? 'Enter stake amount first' : 'اول مقدار استیک رو وارد کنید');
+        }
+        result = await approveLp(walletData.privateKey, stakeAmount);
       } else if (action === 'stake') {
         if (!stakeAmount || parseFloat(stakeAmount) <= 0) throw new Error(en ? 'Invalid amount' : 'مقدار نامعتبر');
         result = await stakeLp(walletData.privateKey, stakeAmount);
@@ -312,8 +316,9 @@ export default function FarmsPage() {
               {userInfo?.needsApproval && parseFloat(userInfo.lpBalance) > 0 && (
                 <button
                   onClick={() => handleAction('approve')}
-                  disabled={actionLoading}
+                  disabled={actionLoading || !stakeAmount || parseFloat(stakeAmount) <= 0}
                   className="w-full py-2 rounded-lg bg-[var(--arv-gold)]/20 text-[var(--arv-gold)] text-xs font-bold disabled:opacity-40"
+                  title={!stakeAmount ? (en ? 'Enter stake amount first' : 'اول مقدار استیک رو وارد کنید') : ''}
                 >
                   {en ? '1. Approve LP' : '۱. تأیید LP'}
                 </button>

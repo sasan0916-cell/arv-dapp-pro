@@ -13,6 +13,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import TokenLogo from '@/components/ui/TokenLogo';
 import AnimatedNumber from '@/components/ui/AnimatedNumber';
 import { loadWallet, hasWallet } from '@/lib/services/wallet-service';
+import { useAutoLock } from '@/lib/hooks/useAutoLock';
 import { isBiometricAvailable, unlockWithBiometricPRF, isBiometricEnabledPRF } from '@/lib/services/biometric';
 import { useUserRole } from '@/lib/hooks/useUserRole';
 import { getARVBalance, getBNBBalance } from '@/lib/services/token-service';
@@ -54,6 +55,33 @@ export default function WalletLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [unlocked, setUnlocked] = useState(false);
+  const [lockWarning, setLockWarning] = useState<number | null>(null);
+
+  // 🔒 Auto-lock: قفل خودکار بعد از ۵ دقیقه بی‌فعالیتی
+  // 🔒 خواندن timeout از تنظیمات کاربر
+  const autoLockTimeout = typeof window !== 'undefined'
+    ? (() => {
+        const saved = localStorage.getItem('arv_auto_lock_timeout_minutes');
+        const parsed = saved !== null ? parseInt(saved, 10) : 5;
+        return [1, 5, 15, 30, 0].includes(parsed) ? parsed : 5;
+      })()
+    : 5;
+
+  const { remaining, resetTimer } = useAutoLock({
+    timeoutMinutes: autoLockTimeout === 0 ? 999999 : autoLockTimeout,
+    enabled: unlocked && autoLockTimeout > 0,
+    onLock: () => {
+      setUnlocked(false);
+      setWalletData(null);
+      setPassword('');
+      setArvBalance('0');
+      setBnbBalance('0');
+      setLockWarning(null);
+    },
+    onWarning: (seconds) => {
+      setLockWarning(seconds);
+    },
+  });
   const [walletData, setWalletData] = useState<any>(null);
 
   // دارایی‌ها
@@ -150,6 +178,13 @@ export default function WalletLoginPage() {
   };
 
 
+  // 🔒 وقتی کاربر وارد شد (unlocked = true), timer رو reset کن
+  useEffect(() => {
+    if (unlocked) {
+      resetTimer();
+    }
+  }, [unlocked, resetTimer]);
+
   const handleLock = () => {
     setUnlocked(false);
     setWalletData(null);
@@ -222,6 +257,32 @@ export default function WalletLoginPage() {
         <main className="flex-1 overflow-x-hidden">
           <div className="p-4 md:p-6 max-w-lg mx-auto space-y-4">
 
+            {/* 🔒 Auto-lock Warning Banner (last 30 seconds) */}
+            {unlocked && lockWarning !== null && (
+              <div className="fixed top-4 left-4 right-4 z-50 p-3 rounded-xl bg-amber-500/95 text-white shadow-2xl animate-pulse">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">⏱</span>
+                    <div>
+                      <div className="text-sm font-bold">
+                        کیف پول در {lockWarning} ثانیه قفل می‌شود
+                      </div>
+                      <div className="text-[10px] opacity-90">
+                        برای ادامه، هر جای صفحه را لمس کنید
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setLockWarning(null)}
+                    className="p-1 rounded-lg bg-white/20 hover:bg-white/30"
+                    title="بستن"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -233,6 +294,15 @@ export default function WalletLoginPage() {
                   <div className="font-mono text-[10px] text-[var(--arv-text-muted)]">
                     {walletData.address?.slice(0, 6)}...{walletData.address?.slice(-4)}
                   </div>
+                  {/* 🔒 Auto-lock countdown */}
+                  {unlocked && remaining < 120 && (
+                    <div className={`text-[9px] mt-0.5 flex items-center gap-1 ${remaining < 30 ? 'text-amber-400' : 'text-[var(--arv-text-muted)]'}`}>
+                      <span>🔒</span>
+                      <span className="font-mono">
+                        {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
               <button
