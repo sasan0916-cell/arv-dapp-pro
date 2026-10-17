@@ -7,19 +7,29 @@ import { AppShell } from '@/components/AppShell';
 import ToastProvider from '@/components/ui/ToastProvider';
 import './globals.css';
 
+// 🔥 آدرس فعلی DApp
+const SITE_URL = 'https://arv-dapp-v6.sasan0916.workers.dev';
+
 export const metadata: Metadata = {
-  title: 'Arvand Khabar Token | ARV Super DApp',
-  description: 'کیف پول و DApp غیرمتمرکز توکن ARV روی BNB Smart Chain',
+  metadataBase: new URL(SITE_URL),
+
+  title: 'ARV Super DApp | عرضه رسمی و صرافی غیرمتمرکز ARV',
+  description: 'مرجع رسمی عرضه توکن ARV، صرافی غیرمتمرکز (DEX) و کیف پول | معامله ARV با سایر توکن‌ها و اتصال به کیف پول‌های خارجی روی BNB Smart Chain',
   applicationName: 'ARV DApp',
   keywords: [
     'ARV',
     'Arvand Khabar',
+    'اروند خبر',
+    'عرضه رسمی ARV',
+    'صرافی غیرمتمرکز',
+    'DEX',
     'DApp',
     'Web3',
     'BNB Chain',
     'کیف پول',
     'BEP-20',
-    'اروند خبر',
+    'DeFi',
+    'WalletConnect'
   ],
   authors: [{ name: 'ساسان اشکش' }],
   creator: 'Arvand Khabar Team',
@@ -48,29 +58,31 @@ export const metadata: Metadata = {
     startupImage: ['/icon-512.png'],
   },
 
-  // ===== Open Graph =====
+  // ===== Open Graph (تلگرام، واتساپ، فیسبوک) =====
   openGraph: {
     type: 'website',
     locale: 'fa_IR',
-    url: 'https://arvtoken.ir',
-    siteName: 'ARV DApp',
-    title: 'Arvand Khabar Token | ARV Super DApp',
-    description: 'کیف پول و DApp غیرمتمرکز توکن ARV روی BNB Smart Chain',
+    url: SITE_URL,
+    siteName: 'ARV Super DApp',
+    title: 'ARV Super DApp | عرضه رسمی و صرافی غیرمتمرکز ARV',
+    description: 'مرجع رسمی عرضه توکن ARV، صرافی غیرمتمرکز (DEX) و کیف پول | معامله ARV با سایر توکن‌ها و اتصال به کیف پول‌های خارجی روی BNB Smart Chain',
     images: [
       {
         url: '/arv-logo.png',
         width: 1024,
         height: 1024,
-        alt: 'ARV Token',
+        alt: 'ARV Token - Arvand Khabar',
       },
     ],
   },
 
-  // ===== Twitter =====
+  // ===== Twitter / X =====
   twitter: {
     card: 'summary_large_image',
-    title: 'Arvand Khabar Token | ARV Super DApp',
-    description: 'کیف پول و DApp غیرمتمرکز توکن ARV روی BNB Smart Chain',
+    site: '@ARV_BSC',
+    creator: '@ARV_BSC',
+    title: 'ARV Super DApp | عرضه رسمی و صرافی غیرمتمرکز ARV',
+    description: 'مرجع رسمی عرضه توکن ARV، صرافی غیرمتمرکز (DEX) و کیف پول | معامله ARV با سایر توکن‌ها و اتصال به کیف پول‌های خارجی روی BNB Smart Chain',
     images: ['/arv-logo.png'],
   },
 
