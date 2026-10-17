@@ -6,13 +6,14 @@ import {
   Coins, Shield, Gift, PieChart, TrendingUp, Info, ExternalLink,
   Copy, Check, Calendar, Lock, Users, Award,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend,
 } from 'recharts';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { ARV_CONFIG } from '@/lib/arv-config';
+import { getARVBalance } from '@/lib/services/token-service';
 import { useLanguage } from '@/lib/i18n';
 import { shortAddress, copyToClipboard, formatNumber } from '@/lib/utils';
 
@@ -28,6 +29,44 @@ const DISTRIBUTION_DATA_EN = [
 export default function TokenomicsPage() {
   const { language } = useLanguage();
   const en = language === 'en';
+
+  // 📊 موجودی زنده کیف‌ها از بلاکچین
+  const [mainWalletBalance, setMainWalletBalance] = useState<string>('...');
+  const [rewardWalletBalance, setRewardWalletBalance] = useState<string>('...');
+  const [balanceLoading, setBalanceLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadBalances() {
+      try {
+        const [main, reward] = await Promise.all([
+          getARVBalance(ARV_CONFIG.wallets.main.address),
+          getARVBalance(ARV_CONFIG.wallets.reward.address),
+        ]);
+        if (!cancelled) {
+          // موجودی از bigint به فرمت خوانا (با 18 اعشار)
+          const fmt = (val: bigint) => {
+            const whole = val / 10n ** 18n;
+            return whole.toLocaleString('fa-IR');
+          };
+          setMainWalletBalance(fmt(main));
+          setRewardWalletBalance(fmt(reward));
+        }
+      } catch (e) {
+        console.error('[tokenomics] balance fetch failed:', e);
+        if (!cancelled) {
+          setMainWalletBalance(ARV_CONFIG.wallets.main.amount);
+          setRewardWalletBalance(ARV_CONFIG.wallets.reward.amount);
+        }
+      } finally {
+        if (!cancelled) setBalanceLoading(false);
+      }
+    }
+
+    loadBalances();
+    return () => { cancelled = true; };
+  }, []);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const handleCopy = async (text: string, id: string) => {
@@ -215,7 +254,7 @@ export default function TokenomicsPage() {
                     <span className="font-bold text-sm">کیف اصلی</span>
                   </div>
                   <span className="text-sm font-bold text-[var(--arv-gold)]">
-                    ۶۰٪ • {formatNumber(6000000)} ARV
+                    ۶۰٪ • {balanceLoading ? '...' : mainWalletBalance} ARV
                   </span>
                 </div>
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-[var(--arv-blue)]/40">
@@ -239,7 +278,7 @@ export default function TokenomicsPage() {
                     <span className="font-bold text-sm">کیف پاداش</span>
                   </div>
                   <span className="text-sm font-bold text-[var(--arv-success)]">
-                    ۴۰٪ • {formatNumber(4000000)} ARV
+                    ۴۰٪ • {balanceLoading ? '...' : rewardWalletBalance} ARV
                   </span>
                 </div>
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-[var(--arv-blue)]/40">
