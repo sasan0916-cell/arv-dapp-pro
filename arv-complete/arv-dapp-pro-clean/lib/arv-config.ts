@@ -1,4 +1,6 @@
-const TESTNET_ARV_ADDRESS = '0x049C66b452f650a0d5F51536f5bC03f249C5163A' as `0x${string}`;
+const TESTNET_ARV_ADDRESS = (
+  process.env.NEXT_PUBLIC_ARV_TESTNET_ADDRESS || '0x049C66b452f650a0d5F51536f5bC03f249C5163A'
+).trim() as `0x${string}`;
 
 // Mainnet is activated automatically as soon as a valid ARV mainnet contract
 // address is supplied through NEXT_PUBLIC_ARV_MAINNET_ADDRESS. Until then the
@@ -63,16 +65,20 @@ export const ARV_CONFIG = {
   mainnetReady: ARV_MAINNET_ACTIVE,
   wallets: {
     main: {
-      address: '0xface68c6507ee71090ddcbbb686f86f69508ccf6' as `0x${string}`,
+      address: (
+        process.env.NEXT_PUBLIC_WALLET_MAIN_ADDRESS || '0xface68c6507ee71090ddcbbb686f86f69508ccf6'
+      ).trim() as `0x${string}`,
       share: 60,
-      amount: '6000000',
+      amount: process.env.NEXT_PUBLIC_WALLET_MAIN_AMOUNT || '6000000',
       label: 'کیف اصلی',
       labelEn: 'Main Wallet',
     },
     reward: {
-      address: '0xf912aea6031de1e6d3446e4a7a8d1166328edbe2' as `0x${string}`,
+      address: (
+        process.env.NEXT_PUBLIC_WALLET_REWARD_ADDRESS || '0xf912aea6031de1e6d3446e4a7a8d1166328edbe2'
+      ).trim() as `0x${string}`,
       share: 40,
-      amount: '4000000',
+      amount: process.env.NEXT_PUBLIC_WALLET_REWARD_AMOUNT || '4000000',
       label: 'کیف پاداش',
       labelEn: 'Reward Wallet',
     },
@@ -96,9 +102,17 @@ export const ARV_CONFIG = {
     website: 'https://arvandkhabar.ir',
   },
   links: {
-    bscscanToken: ACTIVE_ARV_ADDRESS ? `${ACTIVE_NETWORK.explorer}/token/${ACTIVE_ARV_ADDRESS}` : '',
-    bscscanMainWallet: `${ACTIVE_NETWORK.explorer}/address/0xface68c6507ee71090ddcbbb686f86f69508ccf6`,
-    bscscanRewardWallet: `${ACTIVE_NETWORK.explorer}/address/0xf912aea6031de1e6d3446e4a7a8d1166328edbe2`,
+    get bscscanToken() {
+      return ACTIVE_ARV_ADDRESS ? `${ACTIVE_NETWORK.explorer}/token/${ACTIVE_ARV_ADDRESS}` : '';
+    },
+    get bscscanMainWallet() {
+      const addr = (process.env.NEXT_PUBLIC_WALLET_MAIN_ADDRESS || '0xface68c6507ee71090ddcbbb686f86f69508ccf6').trim();
+      return `${ACTIVE_NETWORK.explorer}/address/${addr}`;
+    },
+    get bscscanRewardWallet() {
+      const addr = (process.env.NEXT_PUBLIC_WALLET_REWARD_ADDRESS || '0xf912aea6031de1e6d3446e4a7a8d1166328edbe2').trim();
+      return `${ACTIVE_NETWORK.explorer}/address/${addr}`;
+    },
   },
   steps: [
     { num: 1, title: 'فعالیت در اروند خبر', titleEn: 'Activity on Arvand Khabar', desc: 'در سایت خبری اروند خبر فعالیت کنید', descEn: 'Engage on the Arvand Khabar news website' },
