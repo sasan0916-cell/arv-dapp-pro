@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { loadWallet, saveWallet } from '@/lib/services/wallet-service';
 import {
   Settings, Globe, Moon, Bell, Fingerprint, Shield, Download,
   Upload, RefreshCw, Info, AlertTriangle, Trash2, Check,
@@ -45,16 +46,214 @@ export default function SettingsPage() {
 
   const handleClearData = () => {
     if (typeof window === 'undefined') return;
-    // Clear all data
+    
+    // چک ۱: آیا کیف پول داخلی داره؟
+    const hasInternalWallet = 
+      localStorage.getItem('arv_wallet_main') ||
+      localStorage.getItem('arv_wallet_reward') ||
+      localStorage.getItem('arv_wallet_user');
+    
+    if (hasInternalWallet) {
+      const warning = en
+        ? '⚠️ You have internal wallets with private keys stored locally!\n\n' +
+          'If you delete them without backing up the Seed Phrase, your funds will be LOST FOREVER.\n\n' +
+          'Have you backed up all your Seed Phrases?'
+        : '⚠️ شما کیف پول‌های داخلی با کلید خصوصی دارید!\n\n' +
+          'اگر بدون یادداشت Seed Phrase حذف کنید، دارایی شما برای همیشه از بین می‌رود.\n\n' +
+          'آیا Seed Phrase همه کیف‌ها را یادداشت کرده‌اید؟';
+      
+      if (!confirm(warning)) return;
+      
+      // تأیید مضاعف
+      const typed = prompt(
+        en 
+          ? 'Type "DELETE" to confirm permanent deletion of all wallet data:'
+          : 'برای تأیید نهایی، کلمه "DELETE" را تایپ کنید (به انگلیسی):'
+      );
+      
+      if (typed !== 'DELETE') {
+        alert(en ? 'Cancelled.' : 'لغو شد.');
+        return;
+      }
+    } else {
+      // بدون کیف داخلی → تأیید ساده
+      if (!confirm(en ? 'Clear all app data?' : 'همه داده‌های برنامه پاک شود؟')) return;
+    }
+    
+    // پاک کردن
     const keys = Object.keys(localStorage);
     keys.forEach((key) => {
       if (key.startsWith('arv_')) {
         localStorage.removeItem(key);
       }
     });
+    
     setShowClearConfirm(false);
     alert(en ? 'All data cleared!' : 'تمام داده‌ها پاک شد!');
     setTimeout(() => window.location.href = '/', 1000);
+  };
+
+  // ===== Export Keystore =====
+  const handleExportKeystore = async () => {
+    try {
+      // چک وجود کیف پول داخلی
+      const hasWallet = ['main', 'reward', 'user'].some((w) =>
+        localStorage.getItem(`arv_wallet_${w}`)
+      );
+      if (!hasWallet) {
+        alert(en ? 'No internal wallet found' : 'کیف پول داخلی پیدا نشد');
+        return;
+      }
+      
+      const password = prompt(en ? 'Enter wallet password:' : 'رمز کیف پول را وارد کنید:');
+      if (!password) return;
+      
+      // لیست کیف‌های موجود
+      const wallets: Record<string, string> = {};
+      for (const w of ['main', 'reward', 'user']) {
+        const data = localStorage.getItem(`arv_wallet_${w}`);
+        if (data) wallets[w] = data;
+      }
+      
+      // چک رمز با تلاش برای باز کردن کیف user یا اولین کیف
+      const firstWalletId = Object.keys(wallets)[0] as 'main' | 'reward' | 'user';
+      const testWallet = await loadWallet(firstWalletId, password);
+      if (!testWallet) {
+        alert(en ? 'Wrong password' : 'رمز اشتباه است');
+        return;
+      }
+      
+      // دانلود فایل JSON
+      const exportData = {
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+        wallets,
+      };
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `arv-keystore-backup-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      alert(en ? '✅ Keystore exported successfully!' : '✅ Keystore با موفقیت ذخیره شد!');
+    } catch (e: any) {
+      alert((en ? 'Error: ' : 'خطا: ') + (e.message || 'Unknown'));
+    }
+  };
+
+  // ===== Import Keystore =====
+  const handleImportKeystore = () => {
+    try {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json,application/json';
+      input.onchange = async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+        
+        try {
+          const text = await file.text();
+          const data = JSON.parse(text);
+          
+          // چک فرمت
+          if (!data.wallets || typeof data.wallets !== 'object') {
+            alert(en ? 'Invalid keystore file' : 'فایل نامعتبر است');
+            return;
+          }
+          
+          // چک کیف‌های موجود
+          const existing = ['main', 'reward', 'user'].filter((w) =>
+            localStorage.getItem(`arv_wallet_${w}`)
+          );
+          
+          if (existing.length > 0) {
+            const confirm_msg = en
+              ? `Warning: ${existing.length} wallet(s) already exist. Overwrite them?`
+              : `هشدار: ${existing.length} کیف پول موجود است. جایگزین شوند؟`;
+            if (!confirm(confirm_msg)) return;
+          }
+          
+          // ذخیره
+          for (const [w, data_] of Object.entries(data.wallets)) {
+            if (['main', 'reward', 'user'].includes(w)) {
+              localStorage.setItem(`arv_wallet_${w}`, String(data_));
+            }
+          }
+          
+          alert(en ? '✅ Keystore imported successfully!' : '✅ Keystore با موفقیت بارگذاری شد!');
+          setTimeout(() => window.location.reload(), 1000);
+        } catch (e: any) {
+          alert((en ? 'Error: ' : 'خطا: ') + (e.message || 'Invalid file'));
+        }
+      };
+      input.click();
+    } catch (e: any) {
+      alert((en ? 'Error: ' : 'خطا: ') + (e.message || 'Unknown'));
+    }
+  };
+
+  // ===== Export Seed Phrase =====
+  const handleExportSeed = async () => {
+    try {
+      const hasWallet = ['main', 'reward', 'user'].some((w) =>
+        localStorage.getItem(`arv_wallet_${w}`)
+      );
+      if (!hasWallet) {
+        alert(en ? 'No internal wallet found' : 'کیف پول داخلی پیدا نشد');
+        return;
+      }
+      
+      const password = prompt(en ? 'Enter wallet password:' : 'رمز کیف پول را وارد کنید:');
+      if (!password) return;
+      
+      // نمایش هشدار
+      const warning = en
+        ? '⚠️ WARNING: The Seed Phrase will be displayed.\n\n' +
+          'Make sure:\n' +
+          '• Nobody is watching your screen\n' +
+          '• No screen recording is active\n' +
+          '• You are in a safe place\n\n' +
+          'Continue?'
+        : '⚠️ هشدار: Seed Phrase نمایش داده می‌شود.\n\n' +
+          'مطمئن شوید:\n' +
+          '• کسی به صفحه شما نگاه نمی‌کند\n' +
+          '• ضبط صفحه فعال نیست\n' +
+          '• در جای امنی هستید\n\n' +
+          'ادامه؟';
+      
+      if (!confirm(warning)) return;
+      
+      // پیدا کردن اولین کیف
+      const walletId = ['main', 'reward', 'user'].find((w) =>
+        localStorage.getItem(`arv_wallet_${w}`)
+      ) as 'main' | 'reward' | 'user';
+      
+      const walletData = await loadWallet(walletId, password);
+      if (!walletData) {
+        alert(en ? 'Wrong password' : 'رمز اشتباه است');
+        return;
+      }
+      
+      if (walletData.mnemonic) {
+        // نمایش Seed
+        const seedWarning = en
+          ? `Seed Phrase (${walletId}):\n\n${walletData.mnemonic}\n\n` +
+            `⚠️ Write this down on paper and store it safely.\n` +
+            `Never share it with anyone!`
+          : `Seed Phrase (${walletId}):\n\n${walletData.mnemonic}\n\n` +
+            `⚠️ این را روی کاغذ بنویسید و در جای امن نگه دارید.\n` +
+            `هرگز با کسی به اشتراک نگذارید!`;
+        alert(seedWarning);
+      } else {
+        alert(en ? 'This wallet has no Seed Phrase (imported with private key)' : 'این کیف Seed Phrase ندارد (با private key وارد شده)');
+      }
+    } catch (e: any) {
+      alert((en ? 'Error: ' : 'خطا: ') + (e.message || 'Unknown'));
+    }
   };
 
   return (
@@ -282,16 +481,16 @@ export default function SettingsPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <GradientButton variant="gold" size="sm" fullWidth icon={<Download size={14} />}>
+              <GradientButton variant="gold" size="sm" fullWidth icon={<Download size={14} />} onClick={handleExportKeystore}>
                 Export Keystore
               </GradientButton>
-              <GradientButton variant="outline" size="sm" fullWidth icon={<Upload size={14} />}>
+              <GradientButton variant="outline" size="sm" fullWidth icon={<Upload size={14} />} onClick={handleImportKeystore}>
                 Import Keystore
               </GradientButton>
             </div>
 
             <div className="mt-3">
-              <GradientButton variant="outline" size="sm" fullWidth icon={<FileText size={14} />}>
+              <GradientButton variant="outline" size="sm" fullWidth icon={<FileText size={14} />} onClick={handleExportSeed}>
                 Export Seed Phrase
               </GradientButton>
             </div>

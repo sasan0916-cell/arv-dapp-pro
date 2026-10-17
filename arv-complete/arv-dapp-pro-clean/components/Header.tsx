@@ -195,15 +195,24 @@ export function Header({ onMenuClick }: HeaderProps) {
           </Link>
 
           <div className="flex items-center gap-2">
-            <a
-              href="https://arvandkhabar.ir/?page_id=1649"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window === 'undefined') return;
+                const address = localStorage.getItem('arv_user_address') || '';
+                const refCode = localStorage.getItem('arv_referral_code') || '';
+                const params = new URLSearchParams();
+                if (address) params.set('address', address);
+                if (refCode) params.set('ref', refCode);
+                const query = params.toString();
+                const url = `https://arvandkhabar.ir/?page_id=1649${query ? '&' + query : ''}`;
+                window.open(url, '_blank', 'noopener,noreferrer');
+              }}
               title="کسب پاداش ARV"
               className="flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--arv-gold)]/10 border border-[var(--arv-gold)]/40 text-[var(--arv-gold)] hover:bg-[var(--arv-gold)]/20 hover:border-[var(--arv-gold)]/60 transition-all"
             >
               <Gift size={18} />
-            </a>
+            </button>
             <LanguageToggle />
             <ConnectButton />
           </div>
