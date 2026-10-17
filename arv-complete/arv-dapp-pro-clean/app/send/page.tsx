@@ -14,6 +14,7 @@ import { ARV_CONFIG } from '@/lib/arv-config';
 import { shortAddress, isValidAddress, copyToClipboard, formatToken } from '@/lib/utils';
 import { sendARV, getARVBalance, getBNBBalance, estimateGas } from '@/lib/services/token-service';
 import { loadWallet } from '@/lib/services/wallet-service';
+import { runAllChecks } from '@/lib/utils/sendGuard';
 
 type WalletId = 'main' | 'reward' | 'user';
 type Step = 'select-wallet' | 'input' | 'confirm' | 'sending' | 'done';
@@ -109,57 +110,49 @@ export default function SendPage() {
   };
 
   const handleInputNext = async () => {
-    if (!isValidAddress(recipient)) {
-      setError('آدرس گیرنده نامعتبر است');
+    if (!selectedWallet) {
+      setError('کیف پول انتخاب نشده');
       return;
     }
-    // اعتبارسنجی دقیق: فقط عدد دهدهی مثبت بدون نماد علمی
-    const trimmed = amount.trim();
-    if (!/^\d+(\.\d+)?$/.test(trimmed)) {
-      setError('مقدار نامعتبر — فقط عدد دهدهی مجاز است');
-      return;
-    }
-    const amt = parseFloat(trimmed);
-    if (!amt || amt <= 0) {
-      setError('مقدار باید بزرگتر از صفر باشد');
-      return;
-    }
-
-    // پیدا کردن آدرس کیف پول انتخاب‌شده
     const wallet = walletOptions.find((w) => w.id === selectedWallet);
     if (!wallet?.address) {
       setError('کیف پول انتخاب‌شده معتبر نیست');
       return;
     }
 
-    // چک موجودی ARV کافی
-    try {
-      const arvBal = await getARVBalance(wallet.address);
-      const needed = ethers.parseUnits(trimmed, ARV_CONFIG.token.decimals);
-      if (arvBal < needed) {
-        setError('موجودی ARV کافی نیست');
-        return;
-      }
-    } catch (e: any) {
-      setError('خطا در دریافت موجودی ARV: ' + (e.message || ''));
-      return;
-    }
-
-    // چک BNB برای گس (حداقل 0.0005 BNB)
-    try {
-      const bnbBal = await getBNBBalance(wallet.address);
-      const minGas = ethers.parseEther('0.0005');
-      if (bnbBal < minGas) {
-        setError(`موجودی ${ARV_CONFIG.network.nativeCurrency.symbol} برای کارمزد کافی نیست (حداقل 0.0005)`);
-        return;
-      }
-    } catch (e: any) {
-      setError('خطا در دریافت موجودی BNB: ' + (e.message || ''));
-      return;
-    }
-
+    setLoading(true);
     setError('');
-    setStep('confirm');
+
+    try {
+      const [arvBal, bnbBal] = await Promise.all([
+        getARVBalance(wallet.address),
+        getBNBBalance(wallet.address),
+      ]);
+
+      const check = await runAllChecks({
+        recipient,
+        amount,
+        senderAddress: wallet.address,
+        arvBalance: arvBal,
+        bnbBalance: bnbBal,
+        tokenDecimals: ARV_CONFIG.token.decimals,
+      });
+
+      if (!check.ok) {
+        setError(check.errors.join(' • '));
+        return;
+      }
+
+      if (check.warnings.length > 0) {
+        console.warn('[sendGuard warnings]', check.warnings);
+      }
+
+      setStep('confirm');
+    } catch (e: any) {
+      setError('خطا در اعتبارسنجی: ' + (e?.message || 'نامشخص'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleConfirm = async () => {
@@ -169,11 +162,37 @@ export default function SendPage() {
       return;
     }
 
+    const wallet = walletOptions.find((w) => w.id === selectedWallet);
+    if (!wallet?.address) {
+      setError('کیف پول معتبر نیست');
+      return;
+    }
+
     setLoading(true);
     setError('');
     setStep('sending');
 
     try {
+      const [arvBal, bnbBal] = await Promise.all([
+        getARVBalance(wallet.address),
+        getBNBBalance(wallet.address),
+      ]);
+
+      const check = await runAllChecks({
+        recipient,
+        amount,
+        senderAddress: wallet.address,
+        arvBalance: arvBal,
+        bnbBalance: bnbBal,
+        tokenDecimals: ARV_CONFIG.token.decimals,
+      });
+
+      if (!check.ok) {
+        setError(check.errors.join(' • '));
+        setStep('confirm');
+        return;
+      }
+
       const walletData = await loadWallet(selectedWallet, password);
       if (!walletData) {
         throw new Error('رمز عبور اشتباه است یا کیف پول یافت نشد');
