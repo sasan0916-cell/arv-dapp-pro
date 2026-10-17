@@ -13,6 +13,7 @@ import { detectInputType } from '@/lib/utils';
 import { restoreFromInput, saveWallet } from '@/lib/services/wallet-service';
 import { enableBiometric, isBiometricAvailable } from '@/lib/services/biometric';
 import { shortAddress } from '@/lib/utils';
+import { checkPasswordStrength } from '@/lib/utils/passwordGuard';
 
 type Step = 'input' | 'password' | 'biometric' | 'done';
 type WalletId = 'main' | 'reward' | 'user';
@@ -59,8 +60,9 @@ function RestoreContent() {
   };
 
   const handleRestore = async () => {
-    if (password.length < 8) {
-      setError('رمز عبور باید حداقل ۸ کاراکتر باشد');
+    const pwCheck = checkPasswordStrength(password);
+    if (!pwCheck.ok) {
+      setError(pwCheck.errors[0]);
       return;
     }
     if (password !== confirmPassword) {

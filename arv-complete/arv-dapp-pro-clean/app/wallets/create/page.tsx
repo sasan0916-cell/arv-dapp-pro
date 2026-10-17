@@ -12,6 +12,7 @@ import { createNewWallet, saveWallet } from '@/lib/services/wallet-service';
 import { loadReferrerCode, registerInvite, clearReferrerCode } from '@/lib/services/referral-service';
 import { enableBiometric, isBiometricAvailable, enableBiometricPRF } from '@/lib/services/biometric';
 import { copyToClipboard } from '@/lib/utils';
+import { checkPasswordStrength, getStrengthLabel, getStrengthColor } from '@/lib/utils/passwordGuard';
 
 type Step = 'select' | 'show-mnemonic' | 'verify' | 'password' | 'biometric' | 'done';
 type WalletId = 'user';
@@ -107,8 +108,9 @@ export default function CreateWalletPage() {
 
   // ===== Step 4: Password =====
   const handleCreate = async () => {
-    if (password.length < 8) {
-      setError('رمز عبور باید حداقل ۸ کاراکتر باشد');
+    const pwCheck = checkPasswordStrength(password);
+    if (!pwCheck.ok) {
+      setError(pwCheck.errors[0]);
       return;
     }
     if (password !== confirmPassword) {
@@ -387,7 +389,7 @@ export default function CreateWalletPage() {
           <div className="space-y-4">
             <div>
               <label className="text-xs text-[var(--arv-text-muted)] mb-2 block">
-                رمز عبور (حداقل ۸ کاراکتر)
+                رمز عبور (حداقل ۱۲ کاراکتر)
               </label>
               <div className="relative">
                 <input
@@ -405,6 +407,37 @@ export default function CreateWalletPage() {
                 </button>
               </div>
             </div>
+
+
+              {/* 🎨 نوار قدرت رمز */}
+              {password.length > 0 && (() => {
+                const check = checkPasswordStrength(password);
+                const color = getStrengthColor(check.strength);
+                const label = getStrengthLabel(check.strength);
+                return (
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span style={{ color }}>قدرت: {label}</span>
+                      <span className="text-[var(--arv-text-muted)]">{check.score}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-[var(--arv-blue)]/40 overflow-hidden">
+                      <div
+                        className="h-full transition-all duration-300"
+                        style={{ width: `${check.score}%`, backgroundColor: color }}
+                      />
+                    </div>
+                    {check.errors.length > 0 && (
+                      <div className="text-xs space-y-0.5 mt-1">
+                        {check.errors.slice(0, 2).map((err, i) => (
+                          <div key={i} className="text-[var(--arv-danger)] flex items-center gap-1">
+                            <span>•</span> {err}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
             <div>
               <label className="text-xs text-[var(--arv-text-muted)] mb-2 block">
