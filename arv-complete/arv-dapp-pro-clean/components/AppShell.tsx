@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { MobileSidebar } from './MobileSidebar';
@@ -57,6 +58,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <PageTransition>
             {children}
           </PageTransition>
+
+          {/* ⚖️ Footer - لینک‌های حقوقی */}
+          <footer className="mt-auto py-6 px-4 text-center text-[11px] text-[var(--arv-text-muted)] flex flex-wrap justify-center gap-x-4 gap-y-2 border-t border-[var(--arv-gold)]/10">
+            <Link href="/terms" className="hover:text-[var(--arv-gold)] transition-colors">
+              قوانین و مقررات
+            </Link>
+            <span className="opacity-50">•</span>
+            <Link href="/privacy" className="hover:text-[var(--arv-gold)] transition-colors">
+              حریم خصوصی
+            </Link>
+            <span className="opacity-50">•</span>
+            <Link href="/disclaimer" className="hover:text-[var(--arv-gold)] transition-colors">
+              سلب مسئولیت
+            </Link>
+          </footer>
         </div>
 
         <MobileSidebar
