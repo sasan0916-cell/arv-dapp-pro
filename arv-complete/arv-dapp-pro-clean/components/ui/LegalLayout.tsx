@@ -46,18 +46,7 @@ export function LegalLayout({ title, icon, lastUpdated, children }: LegalLayoutP
         </article>
       </GlowCard>
 
-      {/* Footer links */}
-      <div className="flex flex-wrap gap-2 justify-center text-xs">
-        <Link href="/terms" className="px-3 py-1.5 rounded-lg bg-[var(--arv-blue)]/40 hover:bg-[var(--arv-blue)]/60 text-[var(--arv-gold)] transition-all">
-          قوانین و مقررات
-        </Link>
-        <Link href="/privacy" className="px-3 py-1.5 rounded-lg bg-[var(--arv-blue)]/40 hover:bg-[var(--arv-blue)]/60 text-[var(--arv-gold)] transition-all">
-          حریم خصوصی
-        </Link>
-        <Link href="/disclaimer" className="px-3 py-1.5 rounded-lg bg-[var(--arv-blue)]/40 hover:bg-[var(--arv-blue)]/60 text-[var(--arv-gold)] transition-all">
-          سلب مسئولیت
-        </Link>
-      </div>
+      
     </div>
   );
 }
