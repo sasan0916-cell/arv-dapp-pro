@@ -1,0 +1,76 @@
+PWD: /data/data/com.termux/files/home/arv-dapp-pro/arv-complete/arv-dapp-pro-clean
+--- git status ---
+?? fix_chart.py
+?? report.txt
+--- git log ---
+2022e4ab2 fix(market): set explicit height for candlestick chart container
+c78376ace feat(2fa): add app instructions and ensure full i18n support
+0184cdfc7 fix(2fa): use epochTolerance for otplib v13 compatibility
+968eb9080 feat(security): add 2FA (TOTP) setup with QR code in settings
+fff958e33 fix(i18n): remove duplicate footer links & translate app footer
+--- app ---
+about
+alerts
+analytics
+bridge
+dca
+disclaimer
+error.tsx
+farms
+favicon.ico
+globals.css
+globals.css.backup-20261013-2250
+history
+layout.tsx
+layout.tsx.backup-20261013-1607
+layout.tsx.backup-20261017-2231
+layout.tsx.before-viewport-fix
+liquidity
+mainnet
+market
+page.tsx
+page.tsx.backup
+page.tsx.backup-welcome
+page.tsx.before-live-prices
+page.tsx.before-portfolio
+privacy
+receive
+referral
+send
+settings
+swap
+terms
+tokenomics
+wallets
+welcome
+--- app/market ---
+total 267
+drwx------.  2 u0_a39 u0_a39  3488 Oct 18 13:33 .
+drwx------. 23 u0_a39 u0_a39  3488 Oct 18 04:13 ..
+-rw-------.  1 u0_a39 u0_a39   123 Oct 13 22:30 loading.tsx
+-rw-------.  1 u0_a39 u0_a39 36830 Oct 18 13:33 page.tsx
+-rw-------.  1 u0_a39 u0_a39  8418 Oct  2 20:16 page.tsx.backup
+-rw-------.  1 u0_a39 u0_a39 36109 Oct 14 01:42 page.tsx.backup-20261014-0142
+-rw-------.  1 u0_a39 u0_a39 34679 Oct 13 15:22 page.tsx.backup-alerts-20261013-1522
+-rw-------.  1 u0_a39 u0_a39 29702 Oct  2 21:20 page.tsx.backup3
+-rw-------.  1 u0_a39 u0_a39 29643 Oct  2 21:31 page.tsx.backup5
+-rw-------.  1 u0_a39 u0_a39 32891 Oct  5 12:35 page.tsx.before-tradingview
+-rw-------.  1 u0_a39 u0_a39 36381 Oct  2 20:50 page.tsx.new
+--- createChart ---
+./app/market/page.tsx
+--- history ---
+2022e4ab2 fix(market): set explicit height for candlestick chart container
+0644dd5c3 ARV DApp v6.7 — Clean initial commit
+8ed053d22 On main: Temporary changes before restoring
+9083bed25 Add complete project files
+--- reflog ---
+2022e4ab2 HEAD@{0}: reset: moving to HEAD
+2022e4ab2 HEAD@{1}: commit: fix(market): set explicit height for candlestick chart container
+c78376ace HEAD@{2}: commit: feat(2fa): add app instructions and ensure full i18n support
+0184cdfc7 HEAD@{3}: commit: fix(2fa): use epochTolerance for otplib v13 compatibility
+968eb9080 HEAD@{4}: commit: feat(security): add 2FA (TOTP) setup with QR code in settings
+fff958e33 HEAD@{5}: commit: fix(i18n): remove duplicate footer links & translate app footer
+91be85ed3 HEAD@{6}: commit: feat(i18n): make legal pages bilingual (FA/EN)
+80ad6ba3a HEAD@{7}: commit: feat(legal): add Terms, Privacy, Disclaimer pages + footer links
+8089a90a2 HEAD@{8}: commit: feat(security): add HTTP security headers (CSP, HSTS, X-Frame-Options)
+b0419fe70 HEAD@{9}: commit: feat(seo): update metadata for official ARV offering & DEX

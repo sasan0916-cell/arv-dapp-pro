@@ -93,7 +93,7 @@ export function Sidebar() {
       </div>
 
       <div className="mt-4 px-4 py-3 border-t border-[var(--arv-blue)] text-xs text-[var(--arv-text-muted)]">
-        <div>نسخه ۱.۰.۰</div>
+        <div>نسخه ۶.۵۶.۰</div>
         <div className="mt-1">BNB Chain Testnet</div>
       </div>
     </aside>

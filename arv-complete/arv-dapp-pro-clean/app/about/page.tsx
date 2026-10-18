@@ -340,7 +340,7 @@ export default function AboutPage() {
               ساخته شده با عشق برای اکوسیستم اروند خبر
             </div>
             <div className="text-xs text-[var(--arv-text-muted)]">
-              نسخه ۱.۰.۰ • {new Date().getFullYear()}
+              نسخه ۶.۵۶.۰ • {new Date().getFullYear()}
             </div>
           </div>
 

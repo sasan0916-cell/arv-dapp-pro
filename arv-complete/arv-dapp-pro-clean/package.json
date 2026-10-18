@@ -1,6 +1,6 @@
 {
   "name": "arv-dapp-pro",
-  "version": "0.1.0",
+  "version": "6.56.0",
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
@@ -55,6 +55,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.7",
+    "solc": "^0.8.37",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

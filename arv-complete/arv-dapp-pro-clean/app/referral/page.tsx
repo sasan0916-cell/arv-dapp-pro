@@ -1,7 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { registerMyCodeOnChain } from '@/lib/services/referral-service';
+import { loadWallet } from '@/lib/services/wallet-service';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Users, Copy, Check, Share2, ExternalLink, Gift, Info, AlertCircle } from 'lucide-react';
+import { ArrowRight, Users, Copy, Check, Share2, ExternalLink, Gift, Info, AlertCircle, Lock, CheckCircle } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { GlowCard } from '@/components/ui/GlowCard';
 import { GradientButton } from '@/components/ui/GradientButton';
@@ -26,6 +28,10 @@ export default function ReferralPage() {
   const [referralData, setReferralData] = useState<ReferralData | null>(null);
   const [referralStats, setReferralStats] = useState<any>(null);
   const [copied, setCopied] = useState<'code' | 'link' | null>(null);
+  const [password, setPassword] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [txMessage, setTxMessage] = useState('');
+  const [txStatus, setTxStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -79,6 +85,34 @@ export default function ReferralPage() {
       handleCopy(link, 'link');
     }
   };
+
+  const handleRegisterOnChain = async () => {
+    if (!referralData) return;
+    if (!password) {
+      setTxMessage('لطفاً رمز عبور کیف پول را وارد کنید');
+      setTxStatus('error');
+      return;
+    }
+    setIsRegistering(true);
+    setTxMessage('در حال ارسال تراکنش...');
+    setTxStatus('idle');
+    try {
+      const wallet = await loadWallet('user', password);
+      if (!wallet || !wallet.privateKey) {
+        throw new Error('رمز عبور اشتباه است یا کیف پول یافت نشد');
+      }
+      await registerMyCodeOnChain(wallet.privateKey, referralData.code);
+      setTxMessage('✅ کد شما با موفقیت روی بلاکچین ثبت شد!');
+      setTxStatus('success');
+      setPassword('');
+    } catch (e: any) {
+      setTxMessage('❌ خطا: ' + (e.message || 'تراکنش ناموفق بود'));
+      setTxStatus('error');
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
 
   const link = referralData ? buildReferralLink(referralData.code) : '';
 
@@ -156,6 +190,38 @@ export default function ReferralPage() {
             <GradientButton variant="gold" size="md" fullWidth onClick={handleShare} icon={<Share2 size={16} />}>
               {en ? 'Share with friends' : 'ارسال به دوستان'}
             </GradientButton>
+          </div>
+          <div className="mt-6 p-4 rounded-2xl bg-[var(--arv-blue)]/20 border border-[var(--arv-gold)]/30 space-y-3">
+            <div className="text-sm font-bold text-[var(--arv-gold)] flex items-center gap-2">
+              <Lock size={16} />
+              {en ? 'Sync to Blockchain' : 'ثبت روی بلاکچین'}
+            </div>
+            <p className="text-[11px] text-[var(--arv-text-muted)] leading-5">
+              {en ? 'Register your code on the smart contract.' : 'کد خود را روی قرارداد هوشمند ثبت کنید.'}
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={en ? 'Wallet Password' : 'رمز عبور کیف پول'}
+                className="arv-input flex-1 text-sm"
+                dir="ltr"
+              />
+              <GradientButton variant="gold" size="sm" onClick={handleRegisterOnChain} disabled={isRegistering}>
+                {isRegistering ? '...' : (en ? 'Sync' : 'ثبت')}
+              </GradientButton>
+            </div>
+            {txMessage && (
+              <div className={`flex items-center gap-2 text-xs p-2 rounded-lg ${
+                txStatus === 'success' ? 'bg-[var(--arv-success)]/10 text-[var(--arv-success)]' :
+                txStatus === 'error' ? 'bg-[var(--arv-danger)]/10 text-[var(--arv-danger)]' :
+                'bg-[var(--arv-gold)]/10 text-[var(--arv-gold)]'
+              }`}>
+                {txStatus === 'success' ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
+                {txMessage}
+              </div>
+            )}
           </div>
         </GlowCard>
 

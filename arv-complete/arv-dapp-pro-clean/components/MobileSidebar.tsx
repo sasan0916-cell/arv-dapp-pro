@@ -122,7 +122,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         </div>
 
         <div className="p-4 border-t border-[var(--arv-blue)] text-xs text-[var(--arv-text-muted)]">
-          <div>نسخه ۱.۰.۰</div>
+          <div>نسخه ۶.۵۶.۰</div>
           <div className="mt-1">BNB Chain Testnet</div>
         </div>
       </aside>

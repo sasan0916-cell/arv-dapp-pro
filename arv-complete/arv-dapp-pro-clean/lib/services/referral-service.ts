@@ -159,3 +159,33 @@ export async function registerInvite(
 export async function clearReferrerCode(): Promise<void> {
   await storageSet('arv_referrer_code', '');
 }
+
+// ===== توابع بلاکچینی (On-chain) =====
+import { ethers } from 'ethers';
+import { ARV_REFERRAL_ADDRESS, ARV_REFERRAL_ABI } from '@/lib/abi/referral-abi';
+import { ARV_CONFIG } from '@/lib/arv-config';
+
+export async function registerMyCodeOnChain(privateKey: string, code: string): Promise<string> {
+  const provider = new ethers.JsonRpcProvider(ARV_CONFIG.network.rpcUrl);
+  const wallet = new ethers.Wallet(privateKey, provider);
+  const contract = new ethers.Contract(ARV_REFERRAL_ADDRESS, ARV_REFERRAL_ABI, wallet);
+  const tx = await contract.registerMyCode(code);
+  await tx.wait();
+  return tx.hash;
+}
+
+export async function registerReferralOnChain(privateKey: string, code: string): Promise<string> {
+  const provider = new ethers.JsonRpcProvider(ARV_CONFIG.network.rpcUrl);
+  const wallet = new ethers.Wallet(privateKey, provider);
+  const contract = new ethers.Contract(ARV_REFERRAL_ADDRESS, ARV_REFERRAL_ABI, wallet);
+  const tx = await contract.registerReferral(code);
+  await tx.wait();
+  return tx.hash;
+}
+
+export async function getOnChainReferralStats(address: string): Promise<{ code: string, referrer: string, invites: number }> {
+  const provider = new ethers.JsonRpcProvider(ARV_CONFIG.network.rpcUrl);
+  const contract = new ethers.Contract(ARV_REFERRAL_ADDRESS, ARV_REFERRAL_ABI, provider);
+  const info = await contract.getReferralInfo(address);
+  return { code: info[0], referrer: info[1], invites: Number(info[2]) };
+}

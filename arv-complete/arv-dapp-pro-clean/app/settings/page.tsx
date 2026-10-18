@@ -717,7 +717,7 @@ export default function SettingsPage() {
 
           {/* Footer */}
           <div className="text-center py-4 text-xs text-[var(--arv-text-muted)]">
-            ARV Super DApp • {en ? 'v1.0.0' : 'نسخه ۱.۰.۰'} • {new Date().getFullYear()}
+            ARV Super DApp • {en ? 'v6.56.0' : 'نسخه ۶.۵۶.۰'} • {new Date().getFullYear()}
           </div>
 
         </div>
