@@ -194,6 +194,12 @@ export default function MarketPage() {
     }
   }, []);
 
+  useEffect(() => {
+    loadRealChartData();
+    const t = setTimeout(() => setChartLoading(false), 10000);
+    return () => clearTimeout(t);
+  }, [loadRealChartData]);
+
   const load = useCallback(async (silent = false) => {
     setMarket((s) => ({ ...s, loading: !silent, error: '' }));
     const chainId = ARV_CONFIG.network.chainId as 56 | 97;
