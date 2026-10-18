@@ -135,6 +135,7 @@ function ProCandlestickChart({ data }: { data: any[] }) {
     if (!chartContainerRef.current || data.length === 0) return;
 
     const chart = createChart(chartContainerRef.current, {
+      autoSize: true,
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
         textColor: 'rgba(212, 175, 55, 0.7)',
@@ -145,8 +146,6 @@ function ProCandlestickChart({ data }: { data: any[] }) {
         vertLines: { color: 'rgba(212, 175, 55, 0.04)', style: LineStyle.Dotted },
         horzLines: { color: 'rgba(212, 175, 55, 0.04)', style: LineStyle.Dotted },
       },
-      width: chartContainerRef.current.clientWidth,
-      height: 400,
       timeScale: { borderColor: 'rgba(212, 175, 55, 0.15)', timeVisible: true, secondsVisible: false },
       rightPriceScale: { borderColor: 'rgba(212, 175, 55, 0.15)', scaleMargins: { top: 0.1, bottom: 0.2 } },
       crosshair: {
