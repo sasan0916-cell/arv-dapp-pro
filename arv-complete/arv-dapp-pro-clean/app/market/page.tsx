@@ -1,4 +1,7 @@
 'use client';
+import dynamic from 'next/dynamic';
+const MarketChart = dynamic(() => import('@/components/MarketChart'), { ssr: false });
+
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -19,7 +22,6 @@ import AnimatedNumber from '@/components/ui/AnimatedNumber';
 import { ARV_CONFIG } from '@/lib/arv-config';
 import { getPairAddress, getQuote, PANCAKE_V2 } from '@/lib/services/dex-service';
 import { ethers } from 'ethers';
-import { createChart, ColorType, CandlestickSeries, HistogramSeries, LineStyle } from 'lightweight-charts';
 import { fetchLivePrices, type PriceData } from '@/lib/services/price-service';
 
 const USDT = '0x55d398326f99059fF775485246999027B3197955';
@@ -128,79 +130,6 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
   );
 }
 
-function ProCandlestickChart({ data }: { data: any[] }) {
-  const chartContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!chartContainerRef.current || data.length === 0) return;
-
-    const chart = createChart(chartContainerRef.current, {
-      autoSize: true,
-      layout: {
-        background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: 'rgba(212, 175, 55, 0.7)',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: 11,
-      },
-      grid: {
-        vertLines: { color: 'rgba(212, 175, 55, 0.04)', style: LineStyle.Dotted },
-        horzLines: { color: 'rgba(212, 175, 55, 0.04)', style: LineStyle.Dotted },
-      },
-      timeScale: { borderColor: 'rgba(212, 175, 55, 0.15)', timeVisible: true, secondsVisible: false },
-      rightPriceScale: { borderColor: 'rgba(212, 175, 55, 0.15)', scaleMargins: { top: 0.1, bottom: 0.2 } },
-      crosshair: {
-        mode: 0,
-        vertLine: { color: 'rgba(212, 175, 55, 0.6)', width: 1, style: LineStyle.Dashed, labelBackgroundColor: '#d4af37' },
-        horzLine: { color: 'rgba(212, 175, 55, 0.6)', width: 1, style: LineStyle.Dashed, labelBackgroundColor: '#d4af37' },
-      },
-      handleScroll: { mouseWheel: true, pressedMouseMove: true },
-      handleScale: { mouseWheel: true, pinch: true },
-    });
-
-    const candlestickSeries = chart.addSeries(CandlestickSeries, {
-      upColor: '#10b981', downColor: '#ef4444',
-      borderUpColor: '#10b981', borderDownColor: '#ef4444',
-      wickUpColor: '#10b981', wickDownColor: '#ef4444',
-      priceLineVisible: true, priceLineColor: '#d4af37',
-      priceLineStyle: LineStyle.Dotted, priceLineWidth: 1,
-    });
-
-    candlestickSeries.setData(data);
-    chart.timeScale().fitContent();
-
-    const volumeSeries = chart.addSeries(HistogramSeries, {
-      color: 'rgba(212, 175, 55, 0.3)',
-      priceFormat: { type: 'volume' },
-      priceScaleId: 'volume',
-    });
-
-    const volumeData = data.map((d) => ({
-      time: d.time,
-      value: Math.abs(d.close - d.open) * 10000,
-      color: d.close >= d.open ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)',
-    }));
-    volumeSeries.setData(volumeData);
-    chart.priceScale('volume').applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
-
-    const handleResize = () => {
-      if (chartContainerRef.current) chart.applyOptions({ width: chartContainerRef.current.clientWidth });
-    };
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      chart.remove();
-    };
-  }, [data]);
-
-  return (
-    <div className="relative">
-      <div ref={chartContainerRef} className="w-full h-[400px]" />
-      <button className="absolute top-2 left-2 p-1.5 rounded-lg bg-[var(--arv-blue)]/50 border border-[var(--arv-gold)]/20 hover:border-[var(--arv-gold)]/50 transition-all">
-        <Maximize2 size={12} className="text-[var(--arv-gold)]" />
-      </button>
-    </div>
-  );
-}
 
 export default function MarketPage() {
   const { language } = useLanguage();
@@ -466,7 +395,7 @@ export default function MarketPage() {
                     <div className="absolute top-2 right-2 z-10 px-2 py-1 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-bold">
                       {en ? 'DEMO' : 'نمایشی'}
                     </div>
-                    <ProCandlestickChart data={chartData} />
+                    <MarketChart data={chartData} />
                   </div>
                 ) : (
                   <Skeleton variant="chart" />
