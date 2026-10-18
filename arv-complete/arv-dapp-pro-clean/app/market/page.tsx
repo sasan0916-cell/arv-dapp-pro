@@ -15,7 +15,6 @@ import { GlowCard } from '@/components/ui/GlowCard';
 import { useLanguage } from '@/lib/i18n';
 import { StarButton } from '@/components/ui/StarButton';
 import { addAlert } from '@/lib/services/price-alerts';
-import { TradingViewWidget } from '@/components/ui/TradingViewWidget';
 import Skeleton from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
 import AnimatedNumber from '@/components/ui/AnimatedNumber';
@@ -137,6 +136,8 @@ export default function MarketPage() {
   const [market, setMarket] = useState<MarketState>(EMPTY);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [chartData, setChartData] = useState<any[]>([]);
+  const [chartLoading, setChartLoading] = useState(true);
+  const [chartError, setChartError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
   const [activeTab, setActiveTab] = useState<'orderbook' | 'trades'>('orderbook');
@@ -155,22 +156,32 @@ export default function MarketPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const generateChartData = useCallback(() => {
-    const data = [];
-    let price = 0.0024;
-    const now = Math.floor(Date.now() / 1000);
-    const daySeconds = 86400;
-    for (let i = 30; i >= 0; i--) {
-      const time = now - i * daySeconds;
-      const open = price;
-      const change = (Math.random() - 0.48) * 0.0002;
-      const close = Math.max(0.0001, open + change);
-      const high = Math.max(open, close) + Math.random() * 0.0001;
-      const low = Math.max(0.0001, Math.min(open, close) - Math.random() * 0.0001);
-      data.push({ time, open, high, low, close });
-      price = close;
+
+
+  const loadRealChartData = useCallback(async () => {
+    setChartLoading(true);
+    setChartError('');
+    try {
+      // استفاده از API بایننس برای دریافت تاریخچه قیمت BNB/USDT (روزانه)
+      const res = await fetch('https://api.binance.com/api/v3/klines?symbol=BNBUSDT&interval=1d&limit=30', { cache: 'no-store' });
+      if (!res.ok) throw new Error('Failed to fetch');
+      
+      const json = await res.json();
+      const formatted = json.map((k: any) => ({
+        time: Math.floor(k[0] / 1000),
+        open: parseFloat(k[1]),
+        high: parseFloat(k[2]),
+        low: parseFloat(k[3]),
+        close: parseFloat(k[4]),
+      }));
+      
+      setChartData(formatted);
+    } catch (e: any) {
+      console.error(e);
+      setChartError('خطا در دریافت قیمت لحظه‌ای');
+    } finally {
+      setChartLoading(false);
     }
-    setChartData(data);
   }, []);
 
   const load = useCallback(async (silent = false) => {
@@ -227,10 +238,9 @@ export default function MarketPage() {
 
   useEffect(() => {
     load(true);
-    generateChartData();
     const id = window.setInterval(() => load(true), 60000);
     return () => window.clearInterval(id);
-  }, [load, generateChartData]);
+  });
 
   const bnbUsd = market.bnbUsdt ? Number(market.bnbUsdt) : (livePrices['BNB']?.price ?? null);
   const arvUsd = market.arvUsdt ? Number(market.arvUsdt) : market.arvBnb && bnbUsd ? Number(market.arvBnb) * bnbUsd : (livePrices['ARV']?.price ?? null);
@@ -371,30 +381,16 @@ export default function MarketPage() {
                     ))}
                   </div>
                 </div>
-                {chartMode === 'tradingview' ? (
-                  <div className="space-y-3">
-                    <div className="flex gap-2 overflow-x-auto">
-                      {['ARV', 'BNB', 'BTC', 'ETH', 'SOL', 'XRP'].map((sym) => (
-                        <button
-                          key={sym}
-                          onClick={() => setChartSymbol(sym)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
-                            chartSymbol === sym
-                              ? 'bg-[var(--arv-gold)] text-[var(--arv-blue-dark)]'
-                              : 'bg-[var(--arv-blue)]/40 text-[var(--arv-text-muted)] hover:text-white'
-                          }`}
-                        >
-                          {sym}
-                        </button>
-                      ))}
-                    </div>
-                    <TradingViewWidget symbol={chartSymbol} height={400} />
+                {chartLoading ? (
+                  <div className="w-full h-[400px] flex items-center justify-center text-[var(--arv-gold)]">
+                    <RefreshCw size={24} className="animate-spin" />
+                  </div>
+                ) : chartError ? (
+                  <div className="w-full h-[400px] flex items-center justify-center text-[var(--arv-danger)] text-sm border border-[var(--arv-danger)]/30 rounded-xl bg-[var(--arv-danger)]/5">
+                    {chartError}
                   </div>
                 ) : chartData.length > 0 ? (
                   <div className="relative">
-                    <div className="absolute top-2 right-2 z-10 px-2 py-1 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-bold">
-                      {en ? 'DEMO' : 'نمایشی'}
-                    </div>
                     <MarketChart data={chartData} />
                   </div>
                 ) : (
