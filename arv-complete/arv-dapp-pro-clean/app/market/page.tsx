@@ -141,7 +141,6 @@ export default function MarketPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
   const [activeTab, setActiveTab] = useState<'orderbook' | 'trades'>('orderbook');
-  const [chartMode, setChartMode] = useState<'simple' | 'tradingview'>('tradingview');
   const [chartSymbol, setChartSymbol] = useState('BNB');
   const [favorites, setFavorites] = useState<string[]>(['ARV', 'BNB', 'BTC']);
   const [livePrices, setLivePrices] = useState<Record<string, PriceData>>({});
@@ -256,7 +255,7 @@ export default function MarketPage() {
     load(true);
     const id = window.setInterval(() => load(true), 60000);
     return () => window.clearInterval(id);
-  });
+  }, [load]); // 👈 اضافه کردن dependency array
 
   const bnbUsd = market.bnbUsdt ? Number(market.bnbUsdt) : (livePrices['BNB']?.price ?? null);
   const arvUsd = market.arvUsdt ? Number(market.arvUsdt) : market.arvBnb && bnbUsd ? Number(market.arvBnb) * bnbUsd : (livePrices['ARV']?.price ?? null);
@@ -397,21 +396,7 @@ export default function MarketPage() {
                     ))}
                   </div>
                 </div>
-                {chartLoading ? (
-                  <div className="w-full h-[400px] flex items-center justify-center text-[var(--arv-gold)]">
-                    <RefreshCw size={24} className="animate-spin" />
-                  </div>
-                ) : chartError ? (
-                  <div className="w-full h-[400px] flex items-center justify-center text-[var(--arv-danger)] text-sm border border-[var(--arv-danger)]/30 rounded-xl bg-[var(--arv-danger)]/5">
-                    {chartError}
-                  </div>
-                ) : chartData.length > 0 ? (
-                  <div className="relative">
-                    <MarketChart data={chartData} />
-                  </div>
-                ) : (
-                  <Skeleton variant="chart" />
-                )}
+                <MarketChart />
               </GlowCard>
             </div>
 
