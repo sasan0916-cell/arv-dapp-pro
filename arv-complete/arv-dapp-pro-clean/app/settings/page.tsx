@@ -11,6 +11,8 @@ import { GlowCard } from '@/components/ui/GlowCard';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { ARV_CONFIG } from '@/lib/arv-config';
 import { useLanguage } from '@/lib/i18n';
+import { QRCodeSVG } from 'qrcode.react';
+import { generate2FASecret, get2FAUri, verify2FACode, save2FASecret, remove2FA } from '@/lib/services/twofa-service';
 
 type Language = 'fa' | 'en';
 type Theme = 'dark' | 'light' | 'system';
@@ -27,6 +29,10 @@ export default function SettingsPage() {
   const [biometric, setBiometric] = useState(false);
   const [autoLockTimeout, setAutoLockTimeout] = useState<number>(5);
   const [twoFA, setTwoFA] = useState(false);
+  const [show2FAModal, setShow2FAModal] = useState(false);
+  const [twoFASecret, setTwoFASecret] = useState('');
+  const [twoFACode, setTwoFACode] = useState('');
+  const [twoFAError, setTwoFAError] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   useEffect(() => {
@@ -459,7 +465,18 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <button
-                  onClick={() => setTwoFA(!twoFA)}
+                  onClick={() => {
+                      if (twoFA) {
+                        remove2FA('global');
+                        setTwoFA(false);
+                      } else {
+                        const secret = generate2FASecret();
+                        setTwoFASecret(secret);
+                        setShow2FAModal(true);
+                        setTwoFACode('');
+                        setTwoFAError('');
+                      }
+                    }}
                   className={`w-12 h-6 rounded-full transition-all relative ${
                     twoFA ? 'bg-[var(--arv-gold)]' : 'bg-[var(--arv-blue)]'
                   }`}
@@ -644,6 +661,63 @@ export default function SettingsPage() {
 
         </div>
       </main>
+    
+      {/* 2FA Modal */}
+      {show2FAModal && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <GlowCard glowColor="gold" className="w-full max-w-sm">
+            <div className="text-center space-y-4">
+              <h3 className="font-bold text-lg">{en ? 'Setup 2FA' : 'راه‌اندازی 2FA'}</h3>
+              <p className="text-xs text-[var(--arv-text-muted)]">
+                {en ? 'Scan this QR code with Google Authenticator or Authy' : 'این بارکد را با Google Authenticator یا Authy اسکن کنید'}
+              </p>
+              
+              <div className="bg-white p-3 rounded-xl inline-block mx-auto">
+                <QRCodeSVG value={get2FAUri(twoFASecret)} size={180} />
+              </div>
+              
+              <div className="text-left space-y-2">
+                <label className="text-xs text-[var(--arv-text-muted)]">
+                  {en ? 'Or enter secret manually:' : 'یا کلید را دستی وارد کنید:'}
+                </label>
+                <div className="p-2 bg-[var(--arv-blue)]/40 rounded-lg text-xs font-mono break-all text-center">
+                  {twoFASecret}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  placeholder={en ? "6-digit code" : "کد ۶ رقمی"}
+                  value={twoFACode}
+                  onChange={(e) => setTwoFACode(e.target.value)}
+                  className="w-full text-center tracking-widest arv-input"
+                  maxLength={6}
+                  dir="ltr"
+                />
+                {twoFAError && <p className="text-xs text-[var(--arv-danger)]">{twoFAError}</p>}
+              </div>
+
+              <div className="flex gap-2">
+                <GradientButton variant="gold" fullWidth onClick={async () => {
+                  if (await verify2FACode(twoFASecret, twoFACode)) {
+                    save2FASecret('global', twoFASecret);
+                    setTwoFA(true);
+                    setShow2FAModal(false);
+                  } else {
+                    setTwoFAError(en ? 'Invalid code' : 'کد وارد شده نامعتبر است');
+                  }
+                }}>
+                  {en ? 'Verify & Enable' : 'تایید و فعال‌سازی'}
+                </GradientButton>
+                <button onClick={() => setShow2FAModal(false)} className="px-4 rounded-xl border border-[var(--arv-gold)]/30 text-[var(--arv-gold)] hover:bg-[var(--arv-gold)]/10 transition-all text-sm">
+                  {en ? 'Cancel' : 'لغو'}
+                </button>
+              </div>
+            </div>
+          </GlowCard>
+        </div>
+      )}
     </div>
   );
 }
