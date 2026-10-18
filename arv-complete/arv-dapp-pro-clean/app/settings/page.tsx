@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { loadWallet, saveWallet } from '@/lib/services/wallet-service';
 import {
   Settings, Globe, Moon, Bell, Fingerprint, Shield, Download,
-  Upload, RefreshCw, Info, AlertTriangle, Trash2, Check,
+  Upload, RefreshCw, Info, AlertTriangle, Trash2, Check, Copy,
   ChevronLeft, Wallet, Lock, FileText, ExternalLink,
 } from 'lucide-react';
 import { GlowCard } from '@/components/ui/GlowCard';
@@ -13,6 +13,7 @@ import { ARV_CONFIG } from '@/lib/arv-config';
 import { useLanguage } from '@/lib/i18n';
 import { QRCodeSVG } from 'qrcode.react';
 import { generate2FASecret, get2FAUri, verify2FACode, save2FASecret, remove2FA } from '@/lib/services/twofa-service';
+import { copyToClipboard } from '@/lib/utils';
 
 type Language = 'fa' | 'en';
 type Theme = 'dark' | 'light' | 'system';
@@ -30,6 +31,7 @@ export default function SettingsPage() {
   const [autoLockTimeout, setAutoLockTimeout] = useState<number>(5);
   const [twoFA, setTwoFA] = useState(false);
   const [show2FAModal, setShow2FAModal] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
   const [twoFASecret, setTwoFASecret] = useState('');
   const [twoFACode, setTwoFACode] = useState('');
   const [twoFAError, setTwoFAError] = useState('');
@@ -668,9 +670,34 @@ export default function SettingsPage() {
           <GlowCard glowColor="gold" className="w-full max-w-sm">
             <div className="text-center space-y-4">
               <h3 className="font-bold text-lg">{en ? 'Setup 2FA' : 'راه‌اندازی 2FA'}</h3>
-              <p className="text-xs text-[var(--arv-text-muted)]">
-                {en ? 'Scan this QR code with Google Authenticator or Authy' : 'این بارکد را با Google Authenticator یا Authy اسکن کنید'}
-              </p>
+              
+              {/* 📱 راهنمای اپلیکیشن */}
+              <div className="p-3 bg-[var(--arv-blue)]/30 rounded-xl border border-[var(--arv-gold)]/20 text-right space-y-2">
+                <div className="text-xs font-bold text-[var(--arv-gold)]">
+                  {en ? '1. Install an Authenticator App' : '۱. یک اپلیکیشن احراز هویت نصب کنید'}
+                </div>
+                <div className="text-[11px] text-[var(--arv-text-muted)] leading-5">
+                  {en ? 'Download one of these apps from your app store:' : 'یکی از این اپلیکیشن‌ها را از استور گوشی خود دانلود کنید:'}
+                  <br />
+                  • Google Authenticator
+                  <br />
+                  • Microsoft Authenticator
+                  <br />
+                  • Authy
+                </div>
+                <div className="text-xs font-bold text-[var(--arv-gold)] pt-2">
+                  {en ? '2. Scan or Enter Key' : '۲. اسکن کنید یا کلید را وارد کنید'}
+                </div>
+                <div className="text-[11px] text-[var(--arv-text-muted)] leading-5">
+                  {en ? 'Scan the QR code below, OR copy the key and paste it into the app.' : 'بارکد زیر را اسکن کنید، یا کلید را کپی کرده و در اپ پیست کنید.'}
+                </div>
+                <div className="text-xs font-bold text-[var(--arv-gold)] pt-2">
+                  {en ? '3. Enter 6-digit Code' : '۳. کد ۶ رقمی را وارد کنید'}
+                </div>
+                <div className="text-[11px] text-[var(--arv-text-muted)] leading-5">
+                  {en ? 'Enter the 6-digit code generated in the app below.' : 'کد ۶ رقمی تولید شده در اپلیکیشن را در کادر زیر وارد کنید.'}
+                </div>
+              </div>
               
               <div className="bg-white p-3 rounded-xl inline-block mx-auto">
                 <QRCodeSVG value={get2FAUri(twoFASecret)} size={180} />
@@ -680,8 +707,23 @@ export default function SettingsPage() {
                 <label className="text-xs text-[var(--arv-text-muted)]">
                   {en ? 'Or enter secret manually:' : 'یا کلید را دستی وارد کنید:'}
                 </label>
-                <div className="p-2 bg-[var(--arv-blue)]/40 rounded-lg text-xs font-mono break-all text-center">
-                  {twoFASecret}
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 p-2 bg-[var(--arv-blue)]/40 rounded-lg text-xs font-mono break-all text-center text-[var(--arv-gold)]">
+                    {twoFASecret}
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const ok = await copyToClipboard(twoFASecret);
+                      if (ok) {
+                        setCopiedKey(true);
+                        setTimeout(() => setCopiedKey(false), 2000);
+                      }
+                    }}
+                    className="p-2 rounded-lg bg-[var(--arv-gold)]/20 text-[var(--arv-gold)] hover:bg-[var(--arv-gold)]/30 transition-all flex-shrink-0"
+                    title={en ? "Copy Key" : "کپی کلید"}
+                  >
+                    {copiedKey ? <Check size={16} /> : <Copy size={16} />}
+                  </button>
                 </div>
               </div>
 
@@ -710,7 +752,12 @@ export default function SettingsPage() {
                 }}>
                   {en ? 'Verify & Enable' : 'تایید و فعال‌سازی'}
                 </GradientButton>
-                <button onClick={() => setShow2FAModal(false)} className="px-4 rounded-xl border border-[var(--arv-gold)]/30 text-[var(--arv-gold)] hover:bg-[var(--arv-gold)]/10 transition-all text-sm">
+                <button onClick={() => {
+                  setShow2FAModal(false);
+                  setTwoFASecret(''); // پاک کردن کلید در صورت لغو
+                  setTwoFACode('');
+                  setTwoFAError('');
+                }} className="px-4 rounded-xl border border-[var(--arv-gold)]/30 text-[var(--arv-gold)] hover:bg-[var(--arv-gold)]/10 transition-all text-sm">
                   {en ? 'Cancel' : 'لغو'}
                 </button>
               </div>
