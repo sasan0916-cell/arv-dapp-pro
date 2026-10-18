@@ -195,7 +195,7 @@ function ProCandlestickChart({ data }: { data: any[] }) {
 
   return (
     <div className="relative">
-      <div ref={chartContainerRef} className="w-full" />
+      <div ref={chartContainerRef} className="w-full h-[400px]" />
       <button className="absolute top-2 left-2 p-1.5 rounded-lg bg-[var(--arv-blue)]/50 border border-[var(--arv-gold)]/20 hover:border-[var(--arv-gold)]/50 transition-all">
         <Maximize2 size={12} className="text-[var(--arv-gold)]" />
       </button>
