@@ -2,11 +2,10 @@
  * lib/services/twofa-service.ts
  * 
  * 🔐 سرویس احراز هویت دو مرحله‌ای (2FA / TOTP)
- * این سرویس با استاندارد TOTP کار می‌کنه (سازگار با Google Authenticator و Authy)
- * بر اساس API جدید کتابخانه otplib (نسخه ۱۳)
+ * سازگار با otplib نسخه ۱۳ به بالا
  */
 
-import { generateSecret, generate, verify, generateURI } from 'otplib';
+import { generateSecret, verify, generateURI } from 'otplib';
 
 const STORAGE_PREFIX = 'arv_2fa_';
 
@@ -30,19 +29,24 @@ export function get2FAUri(secret: string, emailOrName: string = 'ARV User'): str
 
 /**
  * بررسی صحت کد ۶ رقمی وارد شده
- * (بازگشتی Promise<boolean>)
+ * (با تحمل خطای ۳۰ ثانیه برای اختلاف ساعت دستگاه‌ها)
  */
 export async function verify2FACode(secret: string, token: string): Promise<boolean> {
   try {
-    const result = await verify({ secret, token });
+    const result = await verify({
+      token: token.trim(),
+      secret: secret.trim(),
+      epochTolerance: 30 // ✅ جایگزین window در نسخه ۱۳
+    } as any); // استفاده از any برای جلوگیری از خطای تایپ در صورت تفاوت در نسخه‌ها
     return result.valid;
-  } catch {
+  } catch (err) {
+    console.error('2FA verify error:', err);
     return false;
   }
 }
 
 /**
- * ذخیره کلید مخفی برای یک کیف پول خاص
+ * ذخیره کلید مخفی
  */
 export function save2FASecret(walletId: string, secret: string): void {
   if (typeof window !== 'undefined') {
@@ -51,7 +55,7 @@ export function save2FASecret(walletId: string, secret: string): void {
 }
 
 /**
- * خواندن کلید مخفی ذخیره شده
+ * خواندن کلید مخفی
  */
 export function get2FASecret(walletId: string): string | null {
   if (typeof window === 'undefined') return null;
@@ -59,7 +63,7 @@ export function get2FASecret(walletId: string): string | null {
 }
 
 /**
- * حذف 2FA برای یک کیف پول
+ * حذف 2FA
  */
 export function remove2FA(walletId: string): void {
   if (typeof window !== 'undefined') {
@@ -68,7 +72,7 @@ export function remove2FA(walletId: string): void {
 }
 
 /**
- * بررسی فعال بودن 2FA برای یک کیف پول
+ * بررسی فعال بودن 2FA
  */
 export function is2FAEnabled(walletId: string): boolean {
   return !!get2FASecret(walletId);
